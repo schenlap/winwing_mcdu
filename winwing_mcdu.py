@@ -176,12 +176,12 @@ datarefs = [
     ("AirbusFBW/MCDU1cont4w", 2),
     ("AirbusFBW/MCDU1cont5w", 2),
     ("AirbusFBW/MCDU1cont6w", 2),
-    #("AirbusFBW/MCDU1cont1g", 2),
-    #("AirbusFBW/MCDU1cont2g", 2),
-    #("AirbusFBW/MCDU1cont3g", 2),
-    #("AirbusFBW/MCDU1cont4g", 2),
-    #("AirbusFBW/MCDU1cont5g", 2),
-    #("AirbusFBW/MCDU1cont6g", 2),
+    ("AirbusFBW/MCDU1cont1g", 2),
+    ("AirbusFBW/MCDU1cont2g", 2),
+    ("AirbusFBW/MCDU1cont3g", 2),
+    ("AirbusFBW/MCDU1cont4g", 2),
+    ("AirbusFBW/MCDU1cont5g", 2),
+    ("AirbusFBW/MCDU1cont6g", 2),
   ]
 
 
@@ -408,7 +408,8 @@ def set_datacache(values):
         pos = 0
         val = int(values[v])
         data_valid = False
-        #print(f"page: v:{v} val:{val},'{chr(val)}'")
+        color = v.split('[')[0][-1]
+        #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if "MCDU1title" in v:
             if val != 0:
                 pos = int(v.split('[')[1].split(']')[0])
@@ -424,7 +425,7 @@ def set_datacache(values):
                 line = int(v.split('label')[1][0]) * 2 - 1
                 pos = int(v.split('[')[1].split(']')[0])
                 data_valid = True
-        if "MCDU1cont" in v:
+        if "MCDU1cont" in v and color == 'w':
             if val != 0:
                 line = int(v.split('cont')[1][0]) * 2
                 pos = int(v.split('[')[1].split(']')[0])
