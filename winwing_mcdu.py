@@ -24,14 +24,15 @@ import usb.util
 
 import XPlaneUdp
 
-BUTTONS_CNT = 32+32+32 # FCU:32, EFISR:32, EFISL:32
+BUTTONS_CNT = 99 # TODO
 
 #@unique
 class DEVICEMASK(IntEnum):
     NONE = 0
-    FCU = 1
-    EFISR = 2
-    EFISL = 4
+    MCDU = 1
+    PFP3N = 2
+    PFP4 = 4
+    PFP7 = 8
 
 
 class BUTTON(Enum):
@@ -49,34 +50,6 @@ class BUTTON(Enum):
 class Leds(Enum):
     BACKLIGHT = 0 # 0 .. 255
     SCREEN_BACKLIGHT = 1 # 0 .. 255
-    LOC_GREEN = 3 # all on/off
-    AP1_GREEN = 5
-    AP2_GREEN = 7
-    ATHR_GREEN = 9
-    EXPED_GREEN = 11
-    APPR_GREEN = 13
-    FLAG_GREEN = 17 # 0 .. 255
-    EXPED_YELLOW = 30 # 0 .. 255
-    EFISR_BACKLIGHT = 100 # 0 .. 255
-    EFISR_SCREEN_BACKLIGHT = 101 # 0 .. 255
-    EFISR_FLAG_GREEN = 102 # 0 .. 255
-    EFISR_FD_GREEN = 103
-    EFISR_LS_GREEN = 104
-    EFISR_CSTR_GREEN = 105
-    EFISR_WPT_GREEN = 106
-    EFISR_VORD_GREEN = 107
-    EFISR_NDB_GREEN = 108
-    EFISR_ARPT_GREEN = 109
-    EFISL_BACKLIGHT = 200 # 0 .. 255
-    EFISL_SCREEN_BACKLIGHT = 201 # 0 .. 255
-    EFISL_FLAG_GREEN = 202 # 0 .. 255
-    EFISL_FD_GREEN = 203
-    EFISL_LS_GREEN = 204
-    EFISL_CSTR_GREEN = 205
-    EFISL_WPT_GREEN = 206
-    EFISL_VORD_GREEN = 207
-    EFISL_NDB_GREEN = 208
-    EFISL_ARPT_GREEN = 209
 
 
 class DREF_TYPE(Enum):
@@ -91,7 +64,6 @@ class Button:
         self.label = label
         self.dataref = dataref
         self.dreftype = dreftype
-        #self.data = None
         self.type = button_type
         self.led = led
 
@@ -101,85 +73,12 @@ buttonlist = []
 values = []
 
 led_brightness = 180
-exped_led_state = False
 
 device_config = DEVICEMASK.NONE
 
 
-
-#      A
-#      ---
-#   F | G | B
-#      ---
-#   E |   | C
-#      ---
-#       D
-# A=0x80, B=0x40, C=0x20, D=0x10, E=0x02, F=0x08, G=0x04
-# Bits are valid for Speed display only, all other share bits in 2 databyte per lcd 7-segment display.
-# Use function data_from_string_swapped to recalculate values
-representations = {
-    '0' : 0xfa,
-    '1' : 0x60,
-    '2' : 0xd6,
-    '3' : 0xf4,
-    '4' : 0x6c,
-    '5' : 0xbc,
-    '6' : 0xbe,
-    '7' : 0xe0,
-    '8' : 0xfe,
-    '9' : 0xfc,
-    'A' : 0xee,
-    'B' : 0xfe,
-    'C' : 0x9a,
-    'D' : 0x76,
-    'E' : 0x9e,
-    'F' : 0x8e,
-    'G' : 0xbe,
-    'H' : 0x6e,
-    'I' : 0x60,
-    'J' : 0x70,
-    'K' : 0x0e,
-    'L' : 0x1a,
-    'M' : 0xa6,
-    'N' : 0x26,
-    'O' : 0xfa,
-    'P' : 0xce,
-    'Q' : 0xec,
-    'R' : 0x06,
-    'S' : 0xbc,
-    'T' : 0x1e,
-    'U' : 0x7a,
-    'V' : 0x32,
-    'W' : 0x58,
-    'X' : 0x6e,
-    'Y' : 0x7c,
-    'Z' : 0xd6,
-    '-' : 0x04,
-    '#' : 0x36,
-    '/' : 0x60,
-    '\\' : 0xa0,
-    ' ' : 0x00,
-}
-
 class Byte(Enum):
     H0 = 0
-    H3 = 1
-    A0 = 2
-    A1 = 3
-    A2 = 4
-    A3 = 5
-    A4 = 6
-    A5 = 7
-    V2 = 8
-    V3 = 9
-    V0 = 10
-    V1 = 11
-    S1 = 12
-    EFISR_B0 = 13
-    EFISR_B2 = 14
-    EFISL_B0 = 15
-    EFISL_B2 = 16
-
 
 
 @dataclass
@@ -190,54 +89,25 @@ class Flag:
     value : bool = False
 
 
-flags = dict([("spd", Flag('spd-mach_spd', Byte.H3, 0x08)),
-              ("mach", Flag('spd-mach_mach', Byte.H3, 0x04)),
-              ("hdg", Flag('hdg-trk-lat_hdg', Byte.H0, 0x80)),
-              ("trk", Flag('hdg-trk-lat_trk', Byte.H0, 0x40)),
-              ("lat", Flag('hdg-trk-lat_lat', Byte.H0, 0x20, True)),
-              ("vshdg", Flag('hdg-v/s_hdg', Byte.A5, 0x08)),
-              ("vs", Flag('hdg-v/s_v/s', Byte.A5, 0x04)),
-              ("ftrk", Flag('trk-fpa_trk', Byte.A5, 0x02)),
-              ("ffpa", Flag('trk-fpa_fpa', Byte.A5, 0x01)),
-              ("alt", Flag('alt', Byte.A4, 0x10, True)),
-              ("hdg_managed", Flag('hdg managed', Byte.H0, 0x10)),
-              ("spd_managed", Flag('spd managed', Byte.H3, 0x02)),
-              ("alt_managed", Flag('alt_managed', Byte.V1, 0x10)),
-              ("vs_horz", Flag('v/s plus horizontal', Byte.A0, 0x10, True)),
-              ("vs_vert", Flag('v/s plus vertical', Byte.V2, 0x10)),
-              ("lvl", Flag('lvl change', Byte.A2, 0x10, True)),
-              ("lvl_left", Flag('lvl change left', Byte.A3, 0x10, True)),
-              ("lvl_right", Flag('lvl change right', Byte.A1, 0x10, True)),
-              ("fvs", Flag('v/s-fpa_v/s', Byte.V0, 0x40)),
-              ("ffpa2", Flag('v/s-fpa_fpa', Byte.V0, 0x80)),
-              ("fpa_comma", Flag('fpa_comma', Byte.V3, 0x10)),
-              ("mach_comma", Flag('mach_comma', Byte.S1, 0x01)),
-              ("efisr_qfe", Flag('efisr_qfe', Byte.EFISR_B0, 0x01)), # TODO: don't know when to set this
-              ("efisr_qnh", Flag('efisr_qnh', Byte.EFISR_B0, 0x02)),
-              ("efisr_hpa_dec", Flag('efisr_hpa_dec', Byte.EFISR_B2, 0x80)),
+flags = dict([("spd", Flag('spd-mach_spd', Byte.H0, 0x01)),
               ])
 
 
-def swap_nibbles(x):
-    return ( (x & 0x0F)<<4 | (x & 0xF0)>>4 )
-
-
-
-def winwing_fcu_set_leds(ep, leds, brightness):
+def winwing_mcdu_set_leds(ep, leds, brightness):
+    return # TODO
     if isinstance(leds, list):
         for i in range(len(leds)):
-            winwing_fcu_set_led(ep, leds[i], brightness)
+            winwing_mcdu_set_led(ep, leds[i], brightness)
     else:
-        winwing_fcu_set_led(ep, leds, brightness)
+        winwing_mcdu_set_led(ep, leds, brightness)
 
-def winwing_fcu_set_led(ep, led, brightness):
-    if led.value < 100: # FCU
+def winwing_mcdu_set_led(ep, led, brightness):
+    return # TODO
+    if led.value < 100: # MCDU
         data = [0x02, 0x10, 0xbb, 0, 0, 3, 0x49, led.value, brightness, 0,0,0,0,0]
-    elif led.value < 200 and device_config & DEVICEMASK.EFISR: # EFIS_R
-        data = [0x02, 0x0e, 0xbf, 0, 0, 3, 0x49, led.value - 100, brightness, 0,0,0,0,0]
-    elif device_config & DEVICEMASK.EFISL: # EFIS_L
-        #TODO set leds EFSIL
-        print(f"setting leds on EFISL not supported")
+    elif device_config & ~DEVICEMASK.MCDU:
+        # TODO set leds PFP*
+        print(f"setting leds on PFP* not supported")
         return
     if 'data' in locals():
       cmd = bytes(data)
@@ -245,77 +115,24 @@ def winwing_fcu_set_led(ep, led, brightness):
 
 
 def lcd_init(ep):
+    return # TODO
     data = [0xf0, 0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] # init packet
     cmd = bytes(data)
     ep.write(cmd)
 
 
-def data_from_string(num_7segments, string):
-
-    l = num_7segments
-    d = [0] * (l)
-    for i in range(min(l, len(string))):
-        d[l-1-i] = representations[string.upper()[i]]
-    return d
-
-
-def data_from_string_swapped(num_7segments, string): # some 7-segemnts have wired mapping, correct ist here
-    # return array with one byte more than lcd chars
-
-    l = num_7segments
-
-    d = data_from_string(l, string)
-    d.append(0)
-
-    # fix wired segment mapping
-    for i in range(len(d)):
-        d[i] = swap_nibbles(d[i])
-    for i in range(0, len(d) - 1):
-        d[l-i] = (d[l-i] & 0x0f) | (d[l-1-i] & 0xf0)
-        d[l-1-i] = d[l-1-i] & 0x0f
-
-    return d
-
-
-def data_from_string_swapped_efis(num_7segments, string): # next wired mapping :-)
-
-    l = num_7segments
-
-    d = data_from_string(l, string)
-    n = [0] * l
-
-    # fix wired segment mapping
-    for i in range(len(d)):
-        n[i] |= 0x01 if d[i] & 0x08 else 0
-        n[i] |= 0x02 if d[i] & 0x04 else 0
-        n[i] |= 0x04 if d[i] & 0x02 else 0
-        n[i] |= 0x08 if d[i] & 0x10 else 0
-        n[i] |= 0x10 if d[i] & 0x80 else 0
-        n[i] |= 0x20 if d[i] & 0x40 else 0
-        n[i] |= 0x40 if d[i] & 0x20 else 0
-        n[i] |= 0x80 if d[i] & 0x01 else 0
-
-    return n
-
-def string_fix_length(v, l):
-    s = str(v)
-    return s.rjust(l, '0')
-
-
-def winwing_fcu_set_lcd(ep, speed, heading, alt, vs):
+def winwing_mcdu_set_lcd(ep, speed, heading, alt, vs):
     global usb_retry
-    s = data_from_string( 3, string_fix_length(speed, 3))
-    h = data_from_string_swapped(3, string_fix_length(heading, 3))
-    a = data_from_string_swapped(5, string_fix_length(alt, 5))
-    v = data_from_string_swapped(4, string_fix_length(vs, 4))
+    return # TODO
+    #s = data_from_string( 3, string_fix_length(speed, 3))
 
-    bl = [0] * len(Byte)
-    for f in flags:
-        bl[flags[f].byte.value] |= (flags[f].mask * flags[f].value)
+    #bl = [0] * len(Byte)
+    #for f in flags:
+    #    bl[flags[f].byte.value] |= (flags[f].mask * flags[f].value)
 
-    pkg_nr = 1
-    data = [0xf0, 0x0, pkg_nr, 0x31, 0x10, 0xbb, 0x0, 0x0, 0x2, 0x1, 0x0, 0x0, 0xff, 0xff, 0x2, 0x0, 0x0, 0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, s[2], s[1] | bl[Byte.S1.value], s[0], h[3] | bl[Byte.H3.value], h[2], h[1], h[0] | bl[Byte.H0.value], a[5] | bl[Byte.A5.value], a[4] | bl[Byte.A4.value], a[3] | bl[Byte.A3.value], a[2] | bl[Byte.A2.value], a[1] | bl[Byte.A1.value], a[0] | v[4] | bl[Byte.A0.value], v[3] | bl[Byte.V3.value], v[2] | bl[Byte.V2.value], v[1] | bl[Byte.V1.value], v[0] | bl[Byte.V0.value], 0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
-    cmd = bytes(data)
+    #pkg_nr = 1
+    #data = [0xf0, 0x0, pkg_nr, 0x31, 0x10, 0xbb, 0x0, 0x0, 0x2, 0x1, 0x0, 0x0, 0xff, 0xff, 0x2, 0x0, 0x0, 0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, s[2], s[1] | bl[Byte.S1.value], s[0], h[3] | bl[Byte.H3.value], h[2], h[1], h[0] | bl[Byte.H0.value], a[5] | bl[Byte.A5.value], a[4] | bl[Byte.A4.value], a[3] | bl[Byte.A3.value], a[2] | bl[Byte.A2.value], a[1] | bl[Byte.A1.value], a[0] | v[4] | bl[Byte.A0.value], v[3] | bl[Byte.V3.value], v[2] | bl[Byte.V2.value], v[1] | bl[Byte.V1.value], v[0] | bl[Byte.V0.value], 0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
+    #cmd = bytes(data)
     try:
         ep.write(cmd)
     except Exception as error:
@@ -332,60 +149,45 @@ def winwing_fcu_set_lcd(ep, speed, heading, alt, vs):
         print(f"error in commit data: {error}")
 
 
-def winwing_efisr_set_lcd(ep, baro):
-    global usb_retry
-    b = data_from_string_swapped_efis( 4, string_fix_length(baro, 4))
-
-    bl = [0] * len(Byte)
-    for f in flags:
-        bl[flags[f].byte.value] |= (flags[f].mask * flags[f].value)
-
-    pkg_nr = 1
-
-#                                                              alwa  unknown3   chksum    unknown4 nown5  cmd2    ZZZEEEERRROoooo                  seg 1    2     3     4
-    data = [0xf0, 0x0, pkg_nr, 0x1a, 0x0e, 0xbf, 0x0, 0x0, 0x2, 0x1, 0x0, 0x0, 0xff, 0xff, 0x1d, 0x0, 0x0, 0x9, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, b[3], b[2] | bl[Byte.EFISR_B2.value], b[1], b[0], bl[Byte.EFISR_B0.value], 0x0e, 0xbf, 0x0, 0x0, 0x3, 0x1, 0x0, 0x0, 0x4c, 0xc, 0x1d, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
-
-    cmd = bytes(data)
-    try:
-        ep.write(cmd)
-        usb_retry = False
-    except Exception as error:
-        usb_retry = True
-        print(f"error in commit data: {error}")
-
-
-fcu_device = None # usb /dev/inputx device
+mcdu_device = None # usb /dev/inputx device
 
 datacache = {}
 
 # List of datarefs without led connection to request.
+# Text Dataref format:  <MCDU[1,2]><Line[title/label/cont/etc]><Linenumber[1...6]><Color[a,b,m,s,w]>.
+# We must read all 25 Bytes per dataref!
 datarefs = [
-    ("AirbusFBW/HDGdashed", 2),
-    ("AirbusFBW/SPDdashed", 2),
-    ("AirbusFBW/VSdashed", 2),
-    ("sim/cockpit/autopilot/airspeed", 2),
-    ("sim/cockpit2/autopilot/airspeed_dial_kts_mach", 5),
-    ("AirbusFBW/SPDmanaged", 2),
-    ("sim/cockpit/autopilot/airspeed_is_mach", 2),
-    ("sim/cockpit/autopilot/heading_mag", 5),
-    ("AirbusFBW/HDGmanaged", 2),
-    ("AirbusFBW/HDGTRKmode", 2),
-    ("sim/cockpit/autopilot/altitude", 5),
-    ("AirbusFBW/ALTmanaged", 2),
-    ("sim/cockpit/autopilot/vertical_velocity", 5),
-    ("sim/cockpit2/autopilot/fpa", 2),
-    ("AirbusFBW/APVerticalMode", 5), # EXPED light on for vsmode >= 112
-    ("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_copilot", 2),
-    ("AirbusFBW/BaroStdFO", 2),
-    ("AirbusFBW/BaroUnitFO", 2)
+    ("AirbusFBW/MCDU1titleb", 2),
+    ("AirbusFBW/MCDU1titleg", 2),
+    ("AirbusFBW/MCDU1titles", 2),
+    ("AirbusFBW/MCDU1titlew", 2),
+    ("AirbusFBW/MCDU1titley", 2),
+    ("AirbusFBW/MCDU1label1w", 2), # missing a,b,m,s
+    ("AirbusFBW/MCDU1label2w", 2),
+    ("AirbusFBW/MCDU1label3w", 2),
+    ("AirbusFBW/MCDU1label4w", 2),
+    ("AirbusFBW/MCDU1label5w", 2),
+    ("AirbusFBW/MCDU1label6w", 2),
+    ("AirbusFBW/MCDU1cont1b", 2), # missing a,m,s,w
+    ("AirbusFBW/MCDU1cont2b", 2),
+    ("AirbusFBW/MCDU1cont3b", 2),
+    ("AirbusFBW/MCDU1cont4b", 2),
+    ("AirbusFBW/MCDU1cont5b", 2),
+    ("AirbusFBW/MCDU1cont6b", 2),
+    ("AirbusFBW/MCDU1cont1g", 2),
+    ("AirbusFBW/MCDU1cont2g", 2),
+    ("AirbusFBW/MCDU1cont3g", 2),
+    ("AirbusFBW/MCDU1cont4g", 2),
+    ("AirbusFBW/MCDU1cont5g", 2),
+    ("AirbusFBW/MCDU1cont6g", 2),
   ]
 
 
 buttons_press_event = [0] * BUTTONS_CNT
 buttons_release_event = [0] * BUTTONS_CNT
 
-fcu_out_endpoint = None
-fcu_in_endpoint = None
+mcdu_out_endpoint = None
+mcdu_in_endpoint = None
 
 usb_retry = False
 
@@ -393,120 +195,71 @@ xp = None
 
 
 def create_button_list_fcu():
-    buttonlist.append(Button(0, "MACH", "toliss_airbus/ias_mach_button_push", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(1, "LOC", "AirbusFBW/LOCbutton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(2, "TRK", "toliss_airbus/hdgtrk_button_push", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(3, "AP1", "AirbusFBW/AP1Engage", DREF_TYPE.DATA, BUTTON.TOGGLE, Leds.AP1_GREEN))
-    buttonlist.append(Button(4, "AP2", "AirbusFBW/AP2Engage", DREF_TYPE.DATA, BUTTON.TOGGLE, Leds.AP2_GREEN))
-    buttonlist.append(Button(5, "A/THR", "AirbusFBW/ATHRbutton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(6, "EXPED", "AirbusFBW/EXPEDbutton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(7, "METRIC", "toliss_airbus/metric_alt_button_push", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(8, "APPR", "AirbusFBW/APPRbutton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(9, "SPD DEC", "sim/autopilot/airspeed_down", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(10, "SPD INC", "sim/autopilot/airspeed_up", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(11, "SPD PUSH", "AirbusFBW/PushSPDSel", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(12, "SPD PULL", "AirbusFBW/PullSPDSel", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(13, "HDG DEC", "sim/autopilot/heading_down", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(14, "HDG INC", "sim/autopilot/heading_up", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(15, "HDG PUSH", "AirbusFBW/PushHDGSel", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(16, "HDG PULL", "AirbusFBW/PullHDGSel", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(17, "ALT DEC", "sim/autopilot/altitude_down", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(18, "ALT INC", "sim/autopilot/altitude_up", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(19, "ALT PUSH", "AirbusFBW/PushAltitude", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(20, "ALT PULL", "AirbusFBW/PullAltitude", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(21, "VS DEC", "sim/autopilot/vertical_speed_down", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(22, "VS INC", "sim/autopilot/vertical_speed_up", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(23, "VS PUSH", "AirbusFBW/PushVSSel", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(24, "VS PULL", "AirbusFBW/PullVSSel", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(25, "ALT 100", "AirbusFBW/ALT100_1000", DREF_TYPE.DATA, BUTTON.SEND_0))
-    buttonlist.append(Button(26, "ALT 1000", "AirbusFBW/ALT100_1000", DREF_TYPE.DATA, BUTTON.SEND_1))
-    buttonlist.append(Button(27, "BRIGHT", "AirbusFBW/SupplLightLevelRehostats[0]", DREF_TYPE.DATA, BUTTON.NONE, [Leds.BACKLIGHT, Leds.EFISR_BACKLIGHT, Leds.FLAG_GREEN, Leds.EFISR_FLAG_GREEN]))
-    buttonlist.append(Button(27, "BRIGHT_LCD", "AirbusFBW/SupplLightLevelRehostats[1]", DREF_TYPE.DATA, BUTTON.NONE, [Leds.SCREEN_BACKLIGHT, Leds.EFISR_SCREEN_BACKLIGHT]))
-    #buttonlist.append(Button(27, "BRIGHT", "sim/cockpit2/electrical/instrument_brightness_ratio_manual[14]", DREF_TYPE.DATA, BUTTON.NONE, Leds.BACKLIGHT)) # Laminar A330
-    #buttonlist.append(Button(27, "BRIGHT_LCD", "sim/cockpit2/electrical/instrument_brightness_ratio_manual[10]", DREF_TYPE.DATA, BUTTON.NONE, Leds.SCREEN_BACKLIGHT)) # Laminar A330
-    buttonlist.append(Button(28, "APPR_LED", "AirbusFBW/APPRilluminated", DREF_TYPE.DATA, BUTTON.NONE, Leds.APPR_GREEN))
-    buttonlist.append(Button(29, "ATHR_LED", "AirbusFBW/ATHRmode", DREF_TYPE.DATA, BUTTON.NONE, Leds.ATHR_GREEN))
-    buttonlist.append(Button(30, "LOC_LED", "AirbusFBW/LOCilluminated", DREF_TYPE.DATA, BUTTON.NONE, Leds.LOC_GREEN))
-
-    if device_config & DEVICEMASK.EFISR:
-        buttonlist.append(Button(32, "R_FD", "toliss_airbus/fd2_push", DREF_TYPE.CMD, BUTTON.TOGGLE, Leds.LOC_GREEN))
-        buttonlist.append(Button(33, "R_LS", "toliss_airbus/dispcommands/CoLSButtonPush", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(34, "R_CSTR", "toliss_airbus/dispcommands/CoCstrPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(35, "R_WPT", "toliss_airbus/dispcommands/CoWptPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(36, "R_VOR.D", "toliss_airbus/dispcommands/CoVorDPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(37, "R_NDB", "toliss_airbus/dispcommands/CoNdbPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(38, "R_ARPT", "toliss_airbus/dispcommands/CoArptPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(39, "R_STD PUSH", "toliss_airbus/copilot_baro_push", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(40, "R_STD PULL", "toliss_airbus/copilot_baro_pull", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(41, "R_PRESS DEC", "sim/instruments/barometer_copilot_down", DREF_TYPE.CMD, BUTTON.TOGGLE)) # TODO send 3 cmd in hPa mode
-        buttonlist.append(Button(42, "R_PRESS INC", "sim/instruments/barometer_copilot_up", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(43, "R_inHg", "AirbusFBW/BaroUnitFO", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(44, "R_hPa", "AirbusFBW/BaroUnitFO", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(45, "R_MODE LS", "AirbusFBW/NDmodeFO", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(46, "R_MODE VOR", "AirbusFBW/NDmodeFO", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(47, "R_MODE NAV", "AirbusFBW/NDmodeFO", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(48, "R_MODE ARC", "AirbusFBW/NDmodeFO", DREF_TYPE.DATA, BUTTON.SEND_3))
-        buttonlist.append(Button(49, "R_MODE PLAN", "AirbusFBW/NDmodeFO", DREF_TYPE.DATA, BUTTON.SEND_4))
-        buttonlist.append(Button(50, "R_RANGE 10", "AirbusFBW/NDrangeFO", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(51, "R_RANGE 20", "AirbusFBW/NDrangeFO", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(52, "R_RANGE 40", "AirbusFBW/NDrangeFO", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(53, "R_RANGE 80", "AirbusFBW/NDrangeFO", DREF_TYPE.DATA, BUTTON.SEND_3))
-        buttonlist.append(Button(54, "R_RANGE 160", "AirbusFBW/NDrangeFO", DREF_TYPE.DATA, BUTTON.SEND_4))
-        buttonlist.append(Button(55, "R_RANGE 320", "AirbusFBW/NDrangeFO", DREF_TYPE.DATA, BUTTON.SEND_5))
-        buttonlist.append(Button(56, "R_1 VOR", "sim/cockpit2/EFIS/EFIS_1_selection_copilot", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(57, "R_1 OFF", "sim/cockpit2/EFIS/EFIS_1_selection_copilot", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(58, "R_1 ADF", "sim/cockpit2/EFIS/EFIS_1_selection_copilot", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(59, "R_2 VOR", "sim/cockpit2/EFIS/EFIS_2_selection_copilot", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(60, "R_2 OFF", "sim/cockpit2/EFIS/EFIS_2_selection_copilot", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(61, "R_2 ADF", "sim/cockpit2/EFIS/EFIS_2_selection_copilot", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowARPTFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_ARPT_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowNDBFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_NDB_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowNDBFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_NDB_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowVORDFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_VORD_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowWPTFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_WPT_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowCSTRFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_CSTR_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/FD2Engage", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_FD_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/ILSonFO", DREF_TYPE.DATA, BUTTON.NONE, Leds.EFISR_LS_GREEN))
-        buttonlist.append(Button(None, "None", "", DREF_TYPE.NONE, BUTTON.NONE, Leds.LOC_GREEN))
-    if device_config & DEVICEMASK.EFISL:
-        buttonlist.append(Button(64, "L_FD", "toliss_airbus/fd1_push", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(65, "L_LS", "toliss_airbus/dispcommands/CaptLSButtonPush", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(66, "L_CSTR", "toliss_airbus/dispcommands/CaptCstrPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(67, "L_WPT", "toliss_airbus/dispcommands/CaptWptPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(68, "L_VOR.D", "toliss_airbus/dispcommands/CaptVorDPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(69, "L_NDB", "toliss_airbus/dispcommands/CaptNdbPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(70, "L_ARPT", "toliss_airbus/dispcommands/CaptArptPushButton", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(71, "L_STD PUSH", "toliss_airbus/capt_baro_push", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(72, "L_STD PULL", "toliss_airbus/capt_baro_pull", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(73, "L_PRESS DEC", "sim/instruments/barometer_down", DREF_TYPE.CMD, BUTTON.TOGGLE)) # TODO send 3 cmd in hPa mode
-        buttonlist.append(Button(74, "L_PRESS INC", "sim/instruments/barometer_up", DREF_TYPE.CMD, BUTTON.TOGGLE))
-        buttonlist.append(Button(75, "L_inHg", "AirbusFBW/BaroUnitCapt", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(76, "L_hPa", "AirbusFBW/BaroUnitCapt", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(77, "L_MODE LS", "AirbusFBW/NDmodeCapt", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(78, "L_MODE VOR", "AirbusFBW/NDmodeCapt", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(79, "L_MODE NAV", "AirbusFBW/NDmodeCapt", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(80, "L_MODE ARC", "AirbusFBW/NDmodeCapt", DREF_TYPE.DATA, BUTTON.SEND_3))
-        buttonlist.append(Button(81, "L_MODE PLAN", "AirbusFBW/NDmodeCapt", DREF_TYPE.DATA, BUTTON.SEND_4))
-        buttonlist.append(Button(82, "L_RANGE 10", "AirbusFBW/NDrangeCapt", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(83, "L_RANGE 20", "AirbusFBW/NDrangeCapt", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(84, "L_RANGE 40", "AirbusFBW/NDrangeCapt", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(85, "L_RANGE 80", "AirbusFBW/NDrangeCapt", DREF_TYPE.DATA, BUTTON.SEND_3))
-        buttonlist.append(Button(86, "L_RANGE 160", "AirbusFBW/NDrangeCapt", DREF_TYPE.DATA, BUTTON.SEND_4))
-        buttonlist.append(Button(87, "L_RANGE 320", "AirbusFBW/NDrangeCapt", DREF_TYPE.DATA, BUTTON.SEND_5))
-        buttonlist.append(Button(88, "L_1 ADF", "sim/cockpit2/EFIS/EFIS_1_selection_pilot", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(89, "L_1 OFF", "sim/cockpit2/EFIS/EFIS_1_selection_pilot", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(90, "L_1 VOR", "sim/cockpit2/EFIS/EFIS_1_selection_pilot", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(91, "L_2 ADF", "sim/cockpit2/EFIS/EFIS_2_selection_pilot", DREF_TYPE.DATA, BUTTON.SEND_0))
-        buttonlist.append(Button(92, "L_2 OFF", "sim/cockpit2/EFIS/EFIS_2_selection_pilot", DREF_TYPE.DATA, BUTTON.SEND_1))
-        buttonlist.append(Button(93, "L_2 VOR", "sim/cockpit2/EFIS/EFIS_2_selection_pilot", DREF_TYPE.DATA, BUTTON.SEND_2))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowARPTCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_ARPT_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowNDBCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_NDB_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowNDBCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_NDB_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowVORDCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_VORD_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowWPTCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_WPT_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/NDShowCSTRCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_CSTR_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/FD1Engage", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_FD_GREEN))
-        buttonlist.append(Button(None, "None", "AirbusFBW/ILSonCapt", DREF_TYPE.DATA, BUTTON.NONE)) #, Leds.EFISR_LS_GREEN))
+    buttonlist.append(Button(0, "LSK1L", "AirbusFBW/MCDU1LSK1L", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(1, "LSK2L", "AirbusFBW/MCDU1LSK2L", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(2, "LSK3L", "AirbusFBW/MCDU1LSK3L", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(3, "LSK4L", "AirbusFBW/MCDU1LSK4L", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(4, "LSK5L", "AirbusFBW/MCDU1LSK5L", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(5, "LSK6L", "AirbusFBW/MCDU1LSK6L", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(6, "LSK1R", "AirbusFBW/MCDU1LSK1R", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(7, "LSK2R", "AirbusFBW/MCDU1LSK2R", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(8, "LSK3R", "AirbusFBW/MCDU1LSK3R", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(9, "LSK4R", "AirbusFBW/MCDU1LSK4R", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(10, "LSK5R", "AirbusFBW/MCDU1LSK5R", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(11, "LSK6R", "AirbusFBW/MCDU1LSK6R", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(12, "INIT", "AirbusFBW/MCDU1Init", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(13, "DATA", "AirbusFBW/MCDU1Data", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(14, "INIT", "AirbusFBW/MCDU1Menu", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(15, "PERF", "AirbusFBW/MCDU1Perf", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(16, "PROG", "AirbusFBW/MCDU1Prog", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(17, "FPLN", "AirbusFBW/MCDU1Fpln", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(18, "DIRTO", "AirbusFBW/MCDU1DirTo", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(19, "RADNAV", "AirbusFBW/MCDU1RadNav", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(20, "AIRPORT", "AirbusFBW/MCDU1Airport", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(21, "FUEL", "AirbusFBW/MCDU1", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(22, "SEC-FPLN", "AirbusFBW/MCDU1", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(23, "SLASH", "AirbusFBW/MCDU1KeySlash", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(24, "SPACE", "AirbusFBW/MCDU1KeySpace", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(25, "OVERFLY", "AirbusFBW/MCDU1KeyOverfly", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(26, "Clear", "AirbusFBW/MCDU1KeyClear", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(26, "PLUSMINUS", "AirbusFBW/MCDU1KeyPM", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(27, "DOT", "AirbusFBW/MCDU1KeyDecimal", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(28, "KEY0", "AirbusFBW/MCDU1Key0", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(29, "KEY1", "AirbusFBW/MCDU1Key1", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(30, "KEY2", "AirbusFBW/MCDU1Key2", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(31, "KEY3", "AirbusFBW/MCDU1Key3", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(32, "KEY4", "AirbusFBW/MCDU1Key4", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(33, "KEY5", "AirbusFBW/MCDU1Key5", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(34, "KEY6", "AirbusFBW/MCDU1Key6", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(35, "KEY7", "AirbusFBW/MCDU1Key7", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(36, "KEY8", "AirbusFBW/MCDU1Key8", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(37, "KEY9", "AirbusFBW/MCDU1Key9", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(38, "KEYA", "AirbusFBW/MCDU1KeyA", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(39, "KEYB", "AirbusFBW/MCDU1KeyB", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(40, "KEYC", "AirbusFBW/MCDU1KeyC", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(41, "KEYD", "AirbusFBW/MCDU1KeyD", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(42, "KEYE", "AirbusFBW/MCDU1KeyE", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(43, "KEYF", "AirbusFBW/MCDU1KeyF", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(44, "KEYG", "AirbusFBW/MCDU1KeyG", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(45, "KEYH", "AirbusFBW/MCDU1KeyH", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(46, "KEYI", "AirbusFBW/MCDU1KeyI", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(47, "KEYJ", "AirbusFBW/MCDU1KeyJ", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(48, "KEYK", "AirbusFBW/MCDU1KeyK", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(49, "KEYL", "AirbusFBW/MCDU1KeyL", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(50, "KEYM", "AirbusFBW/MCDU1KeyM", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(51, "KEYN", "AirbusFBW/MCDU1KeyN", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(52, "KEYO", "AirbusFBW/MCDU1KeyO", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(53, "KEYP", "AirbusFBW/MCDU1KeyP", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(54, "KEYQ", "AirbusFBW/MCDU1KeyQ", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(55, "KEYR", "AirbusFBW/MCDU1KeyR", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(56, "KEYS", "AirbusFBW/MCDU1KeyS", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(57, "KEYT", "AirbusFBW/MCDU1KeyT", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(58, "KEYU", "AirbusFBW/MCDU1KeyU", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(59, "KEYV", "AirbusFBW/MCDU1KeyV", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(60, "KEYW", "AirbusFBW/MCDU1KeyW", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(61, "KEYX", "AirbusFBW/MCDU1KeyX", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(62, "KEYY", "AirbusFBW/MCDU1KeyY", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(63, "KEYZ", "AirbusFBW/MCDU1KeyZ", DREF_TYPE.CMD, BUTTON.TOGGLE))
 
 
 def RequestDataRefs(xp):
@@ -517,8 +270,9 @@ def RequestDataRefs(xp):
             xp.AddDataRef(b.dataref, 3)
     for d in datarefs:
         print(f"register dataref {d[0]}")
-        datacache[d[0]] = None
-        xp.AddDataRef(d[0], d[1])
+        for i in range(25):
+            datacache[d[0]] = None
+            xp.AddDataRef(d[0]+'['+str(i)+']', d[1])
 
 
 def xor_bitmask(a, b, bitmask):
@@ -631,9 +385,9 @@ def set_button_led_lcd(dataref, v):
                 v = 255
             print(f'led: {b.led}, value: {v}')
 
-            winwing_fcu_set_leds(fcu_out_endpoint, b.led, int(v))
+            winwing_mcdu_set_leds(mcdu_out_endpoint, b.led, int(v))
             if b.led == Leds.BACKLIGHT:
-                winwing_fcu_set_led(fcu_out_endpoint, Leds.EXPED_YELLOW, int(v))
+                winwing_mcdu_set_led(mcdu_out_endpoint, Leds.EXPED_YELLOW, int(v))
                 print(f'set led brigthness: {b.led}, value: {v}')
                 led_brightness = v
             break
@@ -645,102 +399,27 @@ def set_datacache(values):
 
     new = False
     for v in values:
-        #print(f'cache: v:{v} val:{values[v]}')
-        if v == 'AirbusFBW/SupplLightLevelRehostats[0]' and values[v] <= 1:
-            # brightness is in 0..1, we need 0..255
-            values[v] = int(values[v] * 255)
-        if v == 'AirbusFBW/SupplLightLevelRehostats[1]' and values[v] <= 1:
-            # brightness is in 0..1, we need 0..255
-            values[v] = int(values[v] * 235 + 20)
-        if v == 'sim/cockpit2/electrical/instrument_brightness_ratio_manual[10]' and values[v] <= 1:
-            # brightness is in 0..1, we need 0..255
-            values[v] = int(values[v] * 255)
-        if v == 'sim/cockpit2/electrical/instrument_brightness_ratio_manual[14]' and values[v] <= 1:
-            # brightness is in 0..1, we need 0..255
-            values[v] = int(values[v] * 255)
-        spd_mach = datacache['sim/cockpit/autopilot/airspeed_is_mach']
-        if spd_mach and v == 'sim/cockpit2/autopilot/airspeed_dial_kts_mach' and values[v] < 1:
-            values[v] = (values[v] +0.005 ) * 100
-        if device_config & DEVICEMASK.EFISR and v == 'sim/cockpit2/gauges/actuators/barometer_setting_in_hg_copilot' and values[v] < 100:
-            values[v] = (values[v] + 0.005) * 100
-        if datacache[v] != int(values[v]):
-            new = True
+        if values[v] != 0:
             print(f'cache: v:{v} val:{int(values[v])}')
-            datacache[v] = int(values[v])
-            set_button_led_lcd(v, int(values[v]))
+        #if v == 'AirbusFBW/SupplLightLevelRehostats[0]' and values[v] <= 1:
+            # brightness is in 0..1, we need 0..255
+        #    values[v] = int(values[v] * 255)
+        #if datacache[v] != int(values[v]):
+        #    new = True
+            #print(f'cache: v:{v} val:{int(values[v])}')
+        #    datacache[v] = int(values[v])
+        #    set_button_led_lcd(v, int(values[v]))
     if new == True or usb_retry == True:
-        speed = datacache['sim/cockpit2/autopilot/airspeed_dial_kts_mach']
-        heading = datacache['sim/cockpit/autopilot/heading_mag']
-        alt = datacache['sim/cockpit/autopilot/altitude']
-        vs = datacache['sim/cockpit/autopilot/vertical_velocity']
-        hdg = datacache['AirbusFBW/HDGTRKmode']
-        if vs < 0:
-            vs = abs(vs)
-            flags['vs_vert'].value = False
-        else:
-            flags['vs_vert'].value = True
-
-        flags['fpa_comma'].value = False
-        if datacache['AirbusFBW/SPDdashed']:
-            speed = '---'
-        if datacache['AirbusFBW/HDGdashed']:
-            heading = '---'
-        if datacache['AirbusFBW/VSdashed']:
-            vs = '----'
-            flags['vs_vert'].value = False
-        elif not hdg:
-            # small 0 for hundred-feed chars in v/s mode
-            vs = string_fix_length(int(vs/100), 2)
-            vs = vs.ljust(4, '#')
-            #print(f"vs: {v}")
-        else:
-            vs = string_fix_length(int(vs / 100), 2)
-            vs = vs.ljust(4, ' ')
-            flags['fpa_comma'].value = True
-        flags['spd_managed'].value = not not datacache['AirbusFBW/SPDmanaged']
-        flags['hdg_managed'].value = not not datacache['AirbusFBW/HDGmanaged']
-        flags['alt_managed'].value = not not datacache['AirbusFBW/ALTmanaged']
-        flags['spd'].value = not spd_mach
-        flags['mach'].value = not not spd_mach
-        flags['mach_comma'].value = not not spd_mach
-
-        flags['hdg'].value = not hdg
-        flags['trk'].value = not not hdg
-        flags['fvs'].value = not hdg
-        flags['vshdg'].value = not hdg
-        flags['vs'].value = not hdg
-        flags['ftrk'].value = not not hdg
-        flags['ffpa'].value = not not hdg
-        flags['ffpa2'].value = not not hdg
 
         if True:
             try: # dataref may not be received already, even when connected
                 exped_led_state_desired = datacache['AirbusFBW/APVerticalMode'] >= 112
             except:
                 exped_led_state_desired = False
-            if exped_led_state_desired != exped_led_state:
-                exped_led_state = exped_led_state_desired
-                winwing_fcu_set_led(fcu_out_endpoint, Leds.EXPED_GREEN, led_brightness * exped_led_state_desired)
 
-        winwing_fcu_set_lcd(fcu_out_endpoint, speed, heading, alt, vs)
+        #winwing_mcdu_set_lcd(mcdu_out_endpoint, speed, heading, alt, vs)
         sleep(0.05)
 
-        if device_config & DEVICEMASK.EFISR:
-            std = datacache['AirbusFBW/BaroStdFO']
-            unit = datacache['AirbusFBW/BaroUnitFO']
-            flags['efisr_qnh'].value = not std
-            if std:
-                baro = 'Std '
-            else:
-                baro = datacache['sim/cockpit2/gauges/actuators/barometer_setting_in_hg_copilot']
-                if unit:
-                   baro = int((baro * 33.86388 + 50) / 100)
-            flags['efisr_hpa_dec'].value = not unit and not std
-
-            if datacache['baro_efisr_last'] != baro:
-                winwing_efisr_set_lcd(fcu_out_endpoint, baro)
-                sleep(0.05)
-                datacache['baro_efisr_last'] = baro
         # TODO EFISL
 
 
@@ -773,16 +452,16 @@ def find_usblib():
 
 def main():
     global xp
-    global fcu_in_endpoint, fcu_out_endpoint
+    global mcdu_in_endpoint, mcdu_out_endpoint
     global values, xplane_connected
     global device_config
 
     backend = find_usblib()
 
-    devlist = [{'vid':0x4098, 'pid':0xbb10, 'name':'FCU', 'mask':DEVICEMASK.FCU},
-               {'vid':0x4098, 'pid':0xbc1e, 'name':'FCU + EFIS-R', 'mask':DEVICEMASK.FCU | DEVICEMASK.EFISR},
-               {'vid':0x4098, 'pid':0xbc1d, 'name':'FCU + EFIS-L (EFIS-L not supported)', 'mask':DEVICEMASK.FCU | DEVICEMASK.EFISL},
-               {'vid':0x4098, 'pid':0xba01, 'name':'FCU + EFIS-L + EFIS-R (EFIS-L not supported)', 'mask':DEVICEMASK.FCU | DEVICEMASK.EFISL | DEVICEMASK.EFISR}]
+    devlist = [{'vid':0x4098, 'pid':0xbb10, 'name':'MCDU', 'mask':DEVICEMASK.MCDU},
+               {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not supported)', 'mask':DEVICEMASK.PFP3N},
+               {'vid':0x4098, 'pid':0xbc1d, 'name':'PFP 4 (not supported)', 'mask':DEVICEMASK.PFP4},
+               {'vid':0x4098, 'pid':0xba01, 'name':'PFP 7 (not supported)', 'mask':DEVICEMASK.PFP7}]
 
     for d in devlist:
         print(f"now searching for winwing {d['name']} ... ", end='')
@@ -795,7 +474,18 @@ def main():
             print(f"not found")
 
     if device is None:
-        exit(f"No compatible winwing device found, quit")
+        #exit(f"No compatible winwing device found, quit")
+        print(f"No compatible winwing device found, quit") # TODO
+        mcdu_out_endpoint = None
+        mcdu_in_endpoint = None
+    else:
+        interface = device[0].interfaces()[0]
+        if device.is_kernel_driver_active(interface.bInterfaceNumber):
+            device.detach_kernel_driver(interface.bInterfaceNumber)
+        device.set_configuration()
+        endpoints = device[0].interfaces()[0].endpoints()
+        mcdu_out_endpoint = endpoints[1]
+        mcdu_in_endpoint = endpoints[0]
 
 
     print('compatible with X-Plane 11/12 and all Toliss Airbus')
@@ -804,30 +494,19 @@ def main():
     datacache['baro_efisr_last'] = None
     datacache['baro_efisl_last'] = None
 
-    interface = device[0].interfaces()[0]
-    if device.is_kernel_driver_active(interface.bInterfaceNumber):
-        device.detach_kernel_driver(interface.bInterfaceNumber)
-
-    device.set_configuration()
-
-    endpoints = device[0].interfaces()[0].endpoints()
-    fcu_out_endpoint = endpoints[1]
-    fcu_in_endpoint = endpoints[0]
     
     leds = [Leds.SCREEN_BACKLIGHT]
-    if device_config & DEVICEMASK.EFISR:
-      leds.append(Leds.EFISR_BACKLIGHT)
-    if device_config & DEVICEMASK.EFISL:
-      leds.append(Leds.EFISL_BACKLIGHT)
+    #if device_config & DEVICEMASK.EFISR:
+    #  leds.append(Leds.EFISR_BACKLIGHT)
+    #if device_config & DEVICEMASK.EFISL:
+    #  leds.append(Leds.EFISL_BACKLIGHT)
 
-    winwing_fcu_set_leds(fcu_out_endpoint, leds, 180)
-    winwing_fcu_set_leds(fcu_out_endpoint, leds, 80)
-    winwing_fcu_set_lcd(fcu_out_endpoint, "   ", "   ", "Schen", " lap")
-    if device_config & DEVICEMASK.EFISR:
-        winwing_efisr_set_lcd(fcu_out_endpoint, '----')
+    winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 180)
+    winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 80)
+    winwing_mcdu_set_lcd(mcdu_out_endpoint, "   ", "   ", "Schen", " lap")
     #TODO set EFISL
 
-    usb_event_thread = Thread(target=fcu_create_events, args=[fcu_in_endpoint, fcu_out_endpoint])
+    usb_event_thread = Thread(target=fcu_create_events, args=[mcdu_in_endpoint, mcdu_out_endpoint])
     usb_event_thread.start()
 
     kb_quit_event_thread = Thread(target=kb_wait_quit_event)
