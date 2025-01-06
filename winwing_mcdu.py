@@ -272,6 +272,7 @@ def RequestDataRefs(xp):
             xp.AddDataRef(b.dataref, 3)
     for d in datarefs:
         print(f"register dataref {d[0]}")
+        #for i in range(PAGE_CHARS_PER_LINE - 1, -1, -1): # registering backward gives us better options to detect line ending, it is on the first message
         for i in range(PAGE_CHARS_PER_LINE):
             #datacache[d[0]] = None
             xp.AddDataRef(d[0]+'['+str(i)+']', d[1])
@@ -400,26 +401,24 @@ def set_datacache(values):
     #global datacache
     #global exped_led_state
     global page
-
+    #print(f'###')
+    new = False
+    page_tmp = [list('                         ')] * PAGE_LINES
     for v in values:
         pos = 0
         val = int(values[v])
-        new = False
         data_valid = False
+        #print(f"page: v:{v} val:{val},'{chr(val)}'")
         if "MCDU1title" in v:
             if val != 0:
-                #print(f"page: v:{v} val:{val},'{chr(val)}'")
                 pos = int(v.split('[')[1].split(']')[0])
                 line = 0
                 data_valid = True
-                #print(f"pos: {pos}")
+                #print(f"pos: {pos}, val: {chr(val)}:{val}")
                 #newline = page[0][:pos] + list(chr(val)) + page[0][pos+1:]
                 #if page[0] != newline:
                 #    page[0] = newline
                 #    new = True
-            #if (pos == PAGE_CHARS_PER_LINE - 1) and new:
-            #if new:
-            #    print(f"{''.join(page[0])}")
         if "MCDU1label" in v:
             if val != 0:
                 line = int(v.split('label')[1][0]) * 2 - 1
@@ -431,22 +430,21 @@ def set_datacache(values):
                 pos = int(v.split('[')[1].split(']')[0])
                 data_valid = True
 
-        if data_valid:
-            newline = page[line][:pos] + list(chr(val)) + page[line][pos+1:]
-            if page[line] != newline:
-                #print(f"old: {''.join(page[line])},       new:{''.join(newline)}, differ")
-                page[line] = newline
-                #print(f"MCDU1label: {newline}")
-                #print(f"v:{v}, line:{line}")
+  
+        if data_valid: # we received all mcdu data from page
+            newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:]
+            page_tmp[line] = newline
+            if page[line][pos] != newline[pos]:
                 new = True
-        if new:
-            print("|------ MCDU SCREEN ------|")
-            for i in range(PAGE_LINES):
-                s = f"|{''.join(page[i])}"
-                s.ljust(PAGE_CHARS_PER_LINE)
-                print(s + '|')
-            print("|-------------------------|")
-            print("")
+    if new:
+        page = page_tmp.copy()
+        print("|------ MCDU SCREEN ------|")
+        for i in range(PAGE_LINES):
+            s = f"|{''.join(page[i])}"
+            s.ljust(PAGE_CHARS_PER_LINE)
+            print(s + '|')
+        print("|-------------------------|")
+        print("")
 
 
         #if values[v] != 0:
