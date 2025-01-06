@@ -30,7 +30,7 @@ import XPlaneUdp
 #  * no colors
 
 BUTTONS_CNT = 99 # TODO
-PAGE_LINES = 13 # Header + 6 * label + 6 * cont
+PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
 PAGE_CHARS_PER_LINE = 25
 
 #@unique
@@ -459,6 +459,10 @@ def set_datacache(values):
             data_valid = True
         if "MCDU1cont" in v: # and color == 'w':
             line = int(v.split('cont')[1][0]) * 2
+            pos = int(v.split('[')[1].split(']')[0])
+            data_valid = True
+        if "MCDU1spw" in v: # and color == 'w':
+            line = 13
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
 
