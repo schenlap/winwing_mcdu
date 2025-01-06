@@ -410,33 +410,35 @@ def set_datacache(values):
         data_valid = False
         color = v.split('[')[0][-1]
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
+        if val == 0 or val == 0x20:
+            continue
         if "MCDU1title" in v:
-            if val != 0:
-                pos = int(v.split('[')[1].split(']')[0])
-                line = 0
-                data_valid = True
-                #print(f"pos: {pos}, val: {chr(val)}:{val}")
-                #newline = page[0][:pos] + list(chr(val)) + page[0][pos+1:]
-                #if page[0] != newline:
-                #    page[0] = newline
-                #    new = True
+            pos = int(v.split('[')[1].split(']')[0])
+            line = 0
+            data_valid = True
+            #print(f"pos: {pos}, val: {chr(val)}:{val}")
+            #newline = page[0][:pos] + list(chr(val)) + page[0][pos+1:]
+            #if page[0] != newline:
+            #    page[0] = newline
+            #    new = True
         if "MCDU1label" in v:
-            if val != 0:
-                line = int(v.split('label')[1][0]) * 2 - 1
-                pos = int(v.split('[')[1].split(']')[0])
-                data_valid = True
-        if "MCDU1cont" in v and color == 'w':
-            if val != 0:
-                line = int(v.split('cont')[1][0]) * 2
-                pos = int(v.split('[')[1].split(']')[0])
-                data_valid = True
+            line = int(v.split('label')[1][0]) * 2 - 1
+            pos = int(v.split('[')[1].split(']')[0])
+            data_valid = True
+        if "MCDU1cont" in v: # and color == 'w':
+            line = int(v.split('cont')[1][0]) * 2
+            pos = int(v.split('[')[1].split(']')[0])
+            data_valid = True
 
-  
+        # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
         if data_valid: # we received all mcdu data from page
-            newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:]
-            page_tmp[line] = newline
-            if page[line][pos] != newline[pos]:
-                new = True
+            if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
+                newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:]
+                page_tmp[line] = newline
+                if page[line][pos] != newline[pos]:
+                    new = True
+            else:
+                print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
     if new:
         page = page_tmp.copy()
         print("|------ MCDU SCREEN ------|")
