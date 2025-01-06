@@ -412,6 +412,14 @@ def set_datacache(values):
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0 or val == 0x20:
             continue
+        if color == 's':
+            if chr(val) == 'A': val = 91 # '['
+            if chr(val) == 'B': val = 93 # ']'
+            if chr(val) == '1': val = 62 # '>', should be a small arrow
+            if chr(val) == '2': val = 60 # '<', should be a small white arrow in title
+            if chr(val) == '3': val = 62 # '>', should be a small white arrow in title
+            if chr(val) == 'E': val = 35 # '#', should be an orange box
+            #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if "MCDU1title" in v:
             pos = int(v.split('[')[1].split(']')[0])
             line = 0
