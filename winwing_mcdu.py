@@ -24,6 +24,11 @@ import usb.util
 
 import XPlaneUdp
 
+# TODOLIST
+#  * I do not get small blue text yet, which dataref?
+#  * CLR in textbox does not update, special handling necessary
+#  * no colors
+
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 13 # Header + 6 * label + 6 * cont
 PAGE_CHARS_PER_LINE = 25
@@ -160,8 +165,8 @@ datacache = {}
 # We must read all 25 Bytes per dataref!
 datarefs = [
     #("AirbusFBW/MCDU1titleb", 2),
-    #("AirbusFBW/MCDU1titleg", 2),
-    #("AirbusFBW/MCDU1titles", 2),
+    ("AirbusFBW/MCDU1titleg", 2),
+    ("AirbusFBW/MCDU1titles", 2),
     ("AirbusFBW/MCDU1titlew", 2),
     #("AirbusFBW/MCDU1titley", 2),
     ("AirbusFBW/MCDU1label1w", 2), # missing a,b,m,s
@@ -170,7 +175,19 @@ datarefs = [
     ("AirbusFBW/MCDU1label4w", 2),
     ("AirbusFBW/MCDU1label5w", 2),
     ("AirbusFBW/MCDU1label6w", 2),
-    ("AirbusFBW/MCDU1cont1w", 2), # missing a,m,s,w
+    ("AirbusFBW/MCDU1cont1b", 2), # missing none
+    ("AirbusFBW/MCDU1cont2b", 2),
+    ("AirbusFBW/MCDU1cont3b", 2),
+    ("AirbusFBW/MCDU1cont4b", 2),
+    ("AirbusFBW/MCDU1cont5b", 2),
+    ("AirbusFBW/MCDU1cont6b", 2),
+    ("AirbusFBW/MCDU1cont1m", 2),
+    ("AirbusFBW/MCDU1cont2m", 2),
+    ("AirbusFBW/MCDU1cont3m", 2),
+    ("AirbusFBW/MCDU1cont4m", 2),
+    ("AirbusFBW/MCDU1cont5m", 2),
+    ("AirbusFBW/MCDU1cont6m", 2),
+    ("AirbusFBW/MCDU1cont1w", 2),
     ("AirbusFBW/MCDU1cont2w", 2),
     ("AirbusFBW/MCDU1cont3w", 2),
     ("AirbusFBW/MCDU1cont4w", 2),
@@ -182,6 +199,13 @@ datarefs = [
     ("AirbusFBW/MCDU1cont4g", 2),
     ("AirbusFBW/MCDU1cont5g", 2),
     ("AirbusFBW/MCDU1cont6g", 2),
+    ("AirbusFBW/MCDU1cont1s", 2),
+    ("AirbusFBW/MCDU1cont2s", 2),
+    ("AirbusFBW/MCDU1cont3s", 2),
+    ("AirbusFBW/MCDU1cont4s", 2),
+    ("AirbusFBW/MCDU1cont5s", 2),
+    ("AirbusFBW/MCDU1cont6s", 2),
+    ("AirbusFBW/MCDU1spw", 2), # textbox
   ]
 
 
