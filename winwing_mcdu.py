@@ -25,6 +25,8 @@ import usb.util
 import XPlaneUdp
 
 BUTTONS_CNT = 99 # TODO
+PAGE_LINES = 13 # Header + 6 * label + 6 * cont
+PAGE_CHARS_PER_LINE = 25
 
 #@unique
 class DEVICEMASK(IntEnum):
@@ -157,29 +159,29 @@ datacache = {}
 # Text Dataref format:  <MCDU[1,2]><Line[title/label/cont/etc]><Linenumber[1...6]><Color[a,b,m,s,w]>.
 # We must read all 25 Bytes per dataref!
 datarefs = [
-    ("AirbusFBW/MCDU1titleb", 2),
-    ("AirbusFBW/MCDU1titleg", 2),
-    ("AirbusFBW/MCDU1titles", 2),
+    #("AirbusFBW/MCDU1titleb", 2),
+    #("AirbusFBW/MCDU1titleg", 2),
+    #("AirbusFBW/MCDU1titles", 2),
     ("AirbusFBW/MCDU1titlew", 2),
-    ("AirbusFBW/MCDU1titley", 2),
+    #("AirbusFBW/MCDU1titley", 2),
     ("AirbusFBW/MCDU1label1w", 2), # missing a,b,m,s
     ("AirbusFBW/MCDU1label2w", 2),
     ("AirbusFBW/MCDU1label3w", 2),
     ("AirbusFBW/MCDU1label4w", 2),
     ("AirbusFBW/MCDU1label5w", 2),
     ("AirbusFBW/MCDU1label6w", 2),
-    ("AirbusFBW/MCDU1cont1b", 2), # missing a,m,s,w
-    ("AirbusFBW/MCDU1cont2b", 2),
-    ("AirbusFBW/MCDU1cont3b", 2),
-    ("AirbusFBW/MCDU1cont4b", 2),
-    ("AirbusFBW/MCDU1cont5b", 2),
-    ("AirbusFBW/MCDU1cont6b", 2),
-    ("AirbusFBW/MCDU1cont1g", 2),
-    ("AirbusFBW/MCDU1cont2g", 2),
-    ("AirbusFBW/MCDU1cont3g", 2),
-    ("AirbusFBW/MCDU1cont4g", 2),
-    ("AirbusFBW/MCDU1cont5g", 2),
-    ("AirbusFBW/MCDU1cont6g", 2),
+    ("AirbusFBW/MCDU1cont1w", 2), # missing a,m,s,w
+    ("AirbusFBW/MCDU1cont2w", 2),
+    ("AirbusFBW/MCDU1cont3w", 2),
+    ("AirbusFBW/MCDU1cont4w", 2),
+    ("AirbusFBW/MCDU1cont5w", 2),
+    ("AirbusFBW/MCDU1cont6w", 2),
+    #("AirbusFBW/MCDU1cont1g", 2),
+    #("AirbusFBW/MCDU1cont2g", 2),
+    #("AirbusFBW/MCDU1cont3g", 2),
+    #("AirbusFBW/MCDU1cont4g", 2),
+    #("AirbusFBW/MCDU1cont5g", 2),
+    #("AirbusFBW/MCDU1cont6g", 2),
   ]
 
 
@@ -270,8 +272,8 @@ def RequestDataRefs(xp):
             xp.AddDataRef(b.dataref, 3)
     for d in datarefs:
         print(f"register dataref {d[0]}")
-        for i in range(25):
-            datacache[d[0]] = None
+        for i in range(PAGE_CHARS_PER_LINE):
+            #datacache[d[0]] = None
             xp.AddDataRef(d[0]+'['+str(i)+']', d[1])
 
 
@@ -353,7 +355,8 @@ def fcu_create_events(ep_in, ep_out):
             try:
                 data_in = ep_in.read(0x81, 105)
             except Exception as error:
-                print(f' *** continue after usb-in error: {error} ***')
+                # print(f' *** continue after usb-in error: {error} ***') # TODO
+                sleep(0.5) # TODO remove
                 continue
             if len(data_in) != 41:
                 print(f'rx data count {len(data_in)} not valid')
@@ -392,15 +395,62 @@ def set_button_led_lcd(dataref, v):
                 led_brightness = v
             break
 
-
+page = [list('                         ')] * PAGE_LINES
 def set_datacache(values):
-    global datacache
-    global exped_led_state
+    #global datacache
+    #global exped_led_state
+    global page
 
-    new = False
     for v in values:
-        if values[v] != 0:
-            print(f'cache: v:{v} val:{int(values[v])}')
+        pos = 0
+        val = int(values[v])
+        new = False
+        data_valid = False
+        if "MCDU1title" in v:
+            if val != 0:
+                #print(f"page: v:{v} val:{val},'{chr(val)}'")
+                pos = int(v.split('[')[1].split(']')[0])
+                line = 0
+                data_valid = True
+                #print(f"pos: {pos}")
+                #newline = page[0][:pos] + list(chr(val)) + page[0][pos+1:]
+                #if page[0] != newline:
+                #    page[0] = newline
+                #    new = True
+            #if (pos == PAGE_CHARS_PER_LINE - 1) and new:
+            #if new:
+            #    print(f"{''.join(page[0])}")
+        if "MCDU1label" in v:
+            if val != 0:
+                line = int(v.split('label')[1][0]) * 2 - 1
+                pos = int(v.split('[')[1].split(']')[0])
+                data_valid = True
+        if "MCDU1cont" in v:
+            if val != 0:
+                line = int(v.split('cont')[1][0]) * 2
+                pos = int(v.split('[')[1].split(']')[0])
+                data_valid = True
+
+        if data_valid:
+            newline = page[line][:pos] + list(chr(val)) + page[line][pos+1:]
+            if page[line] != newline:
+                #print(f"old: {''.join(page[line])},       new:{''.join(newline)}, differ")
+                page[line] = newline
+                #print(f"MCDU1label: {newline}")
+                #print(f"v:{v}, line:{line}")
+                new = True
+        if new:
+            print("|------ MCDU SCREEN ------|")
+            for i in range(PAGE_LINES):
+                s = f"|{''.join(page[i])}"
+                s.ljust(PAGE_CHARS_PER_LINE)
+                print(s + '|')
+            print("|-------------------------|")
+            print("")
+
+
+        #if values[v] != 0:
+        #    print(f'cache: v:{v} val:{int(values[v])}')
         #if v == 'AirbusFBW/SupplLightLevelRehostats[0]' and values[v] <= 1:
             # brightness is in 0..1, we need 0..255
         #    values[v] = int(values[v] * 255)
