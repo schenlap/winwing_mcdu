@@ -28,6 +28,7 @@ import XPlaneUdp
 #  * CLR in textbox does not update, special handling necessary
 #  * no colors
 #  * show vertslew_key
+#  * register only datarefs which are ever used
 
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
@@ -372,7 +373,9 @@ def RequestDataRefs(xp):
         #for i in range(PAGE_CHARS_PER_LINE - 1, -1, -1): # registering backward gives us better options to detect line ending, it is on the first message
         for i in range(PAGE_CHARS_PER_LINE):
             #datacache[d[0]] = None
-            xp.AddDataRef(d[0]+'['+str(i)+']', d[1])
+            dref_full_name = d[0] + '[' + str(i)+']'
+            xp.AddDataRef(dref_full_name, d[1])
+            ever_prepare(dref_full_name)
             dataref_cnt += 1
     print(f"registered {dataref_cnt} datarefs")
 
@@ -496,6 +499,7 @@ def set_button_led_lcd(dataref, v):
             break
 
 page = [list('                                                  ')] * PAGE_LINES
+ever = dict([])
 def set_datacache(values):
     #global datacache
     #global exped_led_state
@@ -508,7 +512,7 @@ def set_datacache(values):
         pos = 0
         val = int(values[v])
         data_valid = False
-        color = v.split('[')[0][-1]
+        color = (v.split('[')[0][-1])[0] # converts to char
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0 or val == 0x20:
             continue
@@ -548,21 +552,29 @@ def set_datacache(values):
         else:
             if color == 's':
                 color = None
-            if "MCDU1s" not in v:
-                color = chr(int(color) - 40) # convert y in Y, a in A, ... if not small font
+            if "MCDU1s" not in v and color != None:
+                #print(f"color: {color}, {type(color)}, val:{val}")
+                color = chr(ord(color) - 32) # convert y in Y, a in A, ... if not small font
+                #print(f"color: {color}, {type(color)}")
+            if color == None:
+                color = 'S' # symbol
+            #else:
+            #    print(f"color: {color}, {type(color)}, len:{len(color)}")
         if "MCDU1VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
-        pos = pos * 2 + 1 # we decode color, char, so 2 entries per displayed char
+        pos = pos * 2 # we decode color, char, so 2 entries per displayed char
 
         # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
         if data_valid: # we received all mcdu data from page
             if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
-                newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:] # set char # todo set color
+                newline = page_tmp[line][:pos] + list(''.join(str(color))) + list(chr(val)) + page_tmp[line][pos+2:] # set char # todo set color
                 page_tmp[line] = newline
                 if page[line][pos] != newline[pos]:
                     new = True
+                    ever_set(v)
             else:
                 print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
+
     if new:
         page = page_tmp.copy()
         print("|------ MCDU SCREEN -----|")
@@ -571,6 +583,13 @@ def set_datacache(values):
             s.ljust(PAGE_CHARS_PER_LINE)
             for i in range(PAGE_CHARS_PER_LINE):
                 print(s[i*2+1], end='')
+            print('|')
+        print("|------- COLORS ---------|")
+        for i in range(PAGE_LINES):
+            s = f"| {''.join(page[i])}"
+            s.ljust(PAGE_CHARS_PER_LINE)
+            for i in range(PAGE_CHARS_PER_LINE):
+                print(s[i*2], end='')
             print('|')
         print("|------------------------|")
         print("")
@@ -600,11 +619,42 @@ def set_datacache(values):
         # TODO EFISL
 
 
+def ever_prepare(name):
+    global ever
+    ever[name] = 0
+
+
+def ever_set(name):
+    global ever
+    ever[name] = 1
+
+ 
+def ever_print():
+    print(f"Never used datarefs")
+    cnt = 0
+    for dataref, value in ever.items():
+        if value == 0:
+            pos = int(dataref.split('[')[1].split(']')[0])
+            if pos == 0:
+                all_refs_0 = True
+                for i in range(PAGE_CHARS_PER_LINE):
+                    name = dataref.split('[')[0]
+                    fullname = name + '[' + str(i) + ']'
+                    #print(f"test {fullname}:{ever[fullname]}")
+                    if ever[fullname] != 0:
+                        all_refs_0 = False
+                if all_refs_0 == True:
+                    print(dataref)
+                    cnt += 1
+    print(f"Found {cnt} never used datarefs")
+
+
 def kb_wait_quit_event():
     print(f"*** Press ENTER to quit this script ***\n")
     while True:
         c = input() # wait for ENTER (not worth to implement kbhit for differnt plattforms, so make it very simple)
         print(f"Exit")
+        ever_print()
         os._exit(0)
 
 
