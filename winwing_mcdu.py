@@ -545,6 +545,11 @@ def set_datacache(values):
             line = 13
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
+        else:
+            if color == 's':
+                color = None
+            if "MCDU1s" not in v:
+                color = chr(int(color) - 40) # convert y in Y, a in A, ... if not small font
         if "MCDU1VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
         pos = pos * 2 + 1 # we decode color, char, so 2 entries per displayed char
