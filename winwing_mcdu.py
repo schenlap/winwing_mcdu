@@ -25,9 +25,9 @@ import usb.util
 import XPlaneUdp
 
 # TODOLIST
-#  * I do not get small blue text yet, which dataref?
 #  * CLR in textbox does not update, special handling necessary
 #  * no colors
+#  * show vertslew_key
 
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
@@ -161,20 +161,41 @@ mcdu_device = None # usb /dev/inputx device
 datacache = {}
 
 # List of datarefs without led connection to request.
-# Text Dataref format:  <MCDU[1,2]><Line[title/label/cont/etc]><Linenumber[1...6]><Color[a,b,m,s,w]>.
+# Text Dataref format:  <MCDU[1,2]><Line[title/label/cont/etc]><Linenumber[1...6]><Color[a,b,m,s,w,y]>.
 # We must read all 25 Bytes per dataref!
 datarefs = [
     #("AirbusFBW/MCDU1titleb", 2),
     ("AirbusFBW/MCDU1titleg", 2),
     ("AirbusFBW/MCDU1titles", 2),
     ("AirbusFBW/MCDU1titlew", 2),
+    ("AirbusFBW/MCDU1titley", 2),
+    ("AirbusFBW/MCDU1stitley", 2),
+    ("AirbusFBW/MCDU1stitlew", 2),
     #("AirbusFBW/MCDU1titley", 2),
-    ("AirbusFBW/MCDU1label1w", 2), # missing a,b,m,s
+    ("AirbusFBW/MCDU1label1w", 2), # missing b,m,s
     ("AirbusFBW/MCDU1label2w", 2),
     ("AirbusFBW/MCDU1label3w", 2),
     ("AirbusFBW/MCDU1label4w", 2),
     ("AirbusFBW/MCDU1label5w", 2),
     ("AirbusFBW/MCDU1label6w", 2),
+    ("AirbusFBW/MCDU1label1a", 2),
+    ("AirbusFBW/MCDU1label2a", 2),
+    ("AirbusFBW/MCDU1label3a", 2),
+    ("AirbusFBW/MCDU1label4a", 2),
+    ("AirbusFBW/MCDU1label5a", 2),
+    ("AirbusFBW/MCDU1label6a", 2),
+    ("AirbusFBW/MCDU1label1g", 2),
+    ("AirbusFBW/MCDU1label2g", 2),
+    ("AirbusFBW/MCDU1label3g", 2),
+    ("AirbusFBW/MCDU1label4g", 2),
+    ("AirbusFBW/MCDU1label5g", 2),
+    ("AirbusFBW/MCDU1label6g", 2),
+    ("AirbusFBW/MCDU1label1b", 2),
+    ("AirbusFBW/MCDU1label2b", 2),
+    ("AirbusFBW/MCDU1label3b", 2),
+    ("AirbusFBW/MCDU1label4b", 2),
+    ("AirbusFBW/MCDU1label5b", 2),
+    ("AirbusFBW/MCDU1label6b", 2),
     ("AirbusFBW/MCDU1cont1b", 2), # missing none
     ("AirbusFBW/MCDU1cont2b", 2),
     ("AirbusFBW/MCDU1cont3b", 2),
@@ -187,6 +208,24 @@ datarefs = [
     ("AirbusFBW/MCDU1cont4m", 2),
     ("AirbusFBW/MCDU1cont5m", 2),
     ("AirbusFBW/MCDU1cont6m", 2),
+    ("AirbusFBW/MCDU1scont1m", 2),
+    ("AirbusFBW/MCDU1scont2m", 2),
+    ("AirbusFBW/MCDU1scont3m", 2),
+    ("AirbusFBW/MCDU1scont4m", 2),
+    ("AirbusFBW/MCDU1scont5m", 2),
+    ("AirbusFBW/MCDU1scont6m", 2),
+    ("AirbusFBW/MCDU1cont1a", 2),
+    ("AirbusFBW/MCDU1cont2a", 2),
+    ("AirbusFBW/MCDU1cont3a", 2),
+    ("AirbusFBW/MCDU1cont4a", 2),
+    ("AirbusFBW/MCDU1cont5a", 2),
+    ("AirbusFBW/MCDU1cont6a", 2),
+    ("AirbusFBW/MCDU1scont1a", 2),
+    ("AirbusFBW/MCDU1scont2a", 2),
+    ("AirbusFBW/MCDU1scont3a", 2),
+    ("AirbusFBW/MCDU1scont4a", 2),
+    ("AirbusFBW/MCDU1scont5a", 2),
+    ("AirbusFBW/MCDU1scont6a", 2),
     ("AirbusFBW/MCDU1cont1w", 2),
     ("AirbusFBW/MCDU1cont2w", 2),
     ("AirbusFBW/MCDU1cont3w", 2),
@@ -199,13 +238,44 @@ datarefs = [
     ("AirbusFBW/MCDU1cont4g", 2),
     ("AirbusFBW/MCDU1cont5g", 2),
     ("AirbusFBW/MCDU1cont6g", 2),
+    ("AirbusFBW/MCDU1scont1g", 2),
+    ("AirbusFBW/MCDU1scont2g", 2),
+    ("AirbusFBW/MCDU1scont3g", 2),
+    ("AirbusFBW/MCDU1scont4g", 2),
+    ("AirbusFBW/MCDU1scont5g", 2),
+    ("AirbusFBW/MCDU1scont6g", 2),
     ("AirbusFBW/MCDU1cont1s", 2),
     ("AirbusFBW/MCDU1cont2s", 2),
     ("AirbusFBW/MCDU1cont3s", 2),
     ("AirbusFBW/MCDU1cont4s", 2),
     ("AirbusFBW/MCDU1cont5s", 2),
     ("AirbusFBW/MCDU1cont6s", 2),
+    ("AirbusFBW/MCDU1scont1b", 2),
+    ("AirbusFBW/MCDU1scont2b", 2),
+    ("AirbusFBW/MCDU1scont3b", 2),
+    ("AirbusFBW/MCDU1scont4b", 2),
+    ("AirbusFBW/MCDU1scont5b", 2),
+    ("AirbusFBW/MCDU1scont6b", 2),
+    ("AirbusFBW/MCDU1cont1y", 2),
+    ("AirbusFBW/MCDU1cont2y", 2),
+    ("AirbusFBW/MCDU1cont3y", 2),
+    ("AirbusFBW/MCDU1cont4y", 2),
+    ("AirbusFBW/MCDU1cont5y", 2),
+    ("AirbusFBW/MCDU1cont6y", 2),
+    ("AirbusFBW/MCDU1scont1w", 2),
+    ("AirbusFBW/MCDU1scont2w", 2),
+    ("AirbusFBW/MCDU1scont3w", 2),
+    ("AirbusFBW/MCDU1scont4w", 2),
+    ("AirbusFBW/MCDU1scont5w", 2),
+    ("AirbusFBW/MCDU1scont6w", 2),
+    ("AirbusFBW/MCDU1scont1y", 2),
+    ("AirbusFBW/MCDU1scont2y", 2),
+    ("AirbusFBW/MCDU1scont3y", 2),
+    ("AirbusFBW/MCDU1scont4y", 2),
+    ("AirbusFBW/MCDU1scont5y", 2),
+    ("AirbusFBW/MCDU1scont6y", 2),
     ("AirbusFBW/MCDU1spw", 2), # textbox
+    ("AirbusFBW/MCDU1VertSlewKeys", 2)
   ]
 
 
@@ -427,6 +497,7 @@ def set_datacache(values):
     global page
     #print(f'###')
     new = False
+    vertslew_key = None
     page_tmp = [list('                         ')] * PAGE_LINES
     for v in values:
         pos = 0
@@ -436,15 +507,19 @@ def set_datacache(values):
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0 or val == 0x20:
             continue
+        #if val == '`':
+        #    val = '°'
         if color == 's':
             if chr(val) == 'A': val = 91 # '['
             if chr(val) == 'B': val = 93 # ']'
+            if chr(val) == '0': val = 60 # '<', should be a small blue arrow
             if chr(val) == '1': val = 62 # '>', should be a small arrow
             if chr(val) == '2': val = 60 # '<', should be a small white arrow in title
             if chr(val) == '3': val = 62 # '>', should be a small white arrow in title
+            if chr(val) == '4': val = 60 # '<', should be a small orange arrow in cont
             if chr(val) == 'E': val = 35 # '#', should be an orange box
             #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
-        if "MCDU1title" in v:
+        if "MCDU1title" in v or "MCDU1stitle" in v:
             pos = int(v.split('[')[1].split(']')[0])
             line = 0
             data_valid = True
@@ -457,7 +532,7 @@ def set_datacache(values):
             line = int(v.split('label')[1][0]) * 2 - 1
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
-        if "MCDU1cont" in v: # and color == 'w':
+        if "MCDU1cont" in v or "MCDU1scont" in v: # and color == 'w':
             line = int(v.split('cont')[1][0]) * 2
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
@@ -465,6 +540,8 @@ def set_datacache(values):
             line = 13
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
+        if "MCDU1VertSlewKeys" in v:
+            vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
 
         # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
         if data_valid: # we received all mcdu data from page
