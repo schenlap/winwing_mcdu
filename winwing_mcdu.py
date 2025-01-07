@@ -32,6 +32,7 @@ import XPlaneUdp
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
 PAGE_CHARS_PER_LINE = 25
+PAGE_BYTEs_PER_LINE = PAGE_CHARS_PER_LINE * 2
 
 #@unique
 class DEVICEMASK(IntEnum):
@@ -494,7 +495,7 @@ def set_button_led_lcd(dataref, v):
                 led_brightness = v
             break
 
-page = [list('                         ')] * PAGE_LINES
+page = [list('                                                  ')] * PAGE_LINES
 def set_datacache(values):
     #global datacache
     #global exped_led_state
@@ -502,7 +503,7 @@ def set_datacache(values):
     #print(f'###')
     new = False
     vertslew_key = None
-    page_tmp = [list('                         ')] * PAGE_LINES
+    page_tmp = [list('                                                  ')] * PAGE_LINES
     for v in values:
         pos = 0
         val = int(values[v])
@@ -546,11 +547,12 @@ def set_datacache(values):
             data_valid = True
         if "MCDU1VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
+        pos = pos * 2 + 1 # we decode color, char, so 2 entries per displayed char
 
         # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
         if data_valid: # we received all mcdu data from page
             if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
-                newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:]
+                newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:] # set char # todo set color
                 page_tmp[line] = newline
                 if page[line][pos] != newline[pos]:
                     new = True
@@ -558,12 +560,14 @@ def set_datacache(values):
                 print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
     if new:
         page = page_tmp.copy()
-        print("|------ MCDU SCREEN ------|")
+        print("|------ MCDU SCREEN -----|")
         for i in range(PAGE_LINES):
-            s = f"|{''.join(page[i])}"
+            s = f" |{''.join(page[i])}"
             s.ljust(PAGE_CHARS_PER_LINE)
-            print(s + '|')
-        print("|-------------------------|")
+            for i in range(PAGE_CHARS_PER_LINE):
+                print(s[i*2+1], end='')
+            print('|')
+        print("|------------------------|")
         print("")
 
 
