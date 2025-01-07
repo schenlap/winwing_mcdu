@@ -359,17 +359,21 @@ def create_button_list_fcu():
 
 
 def RequestDataRefs(xp):
+    dataref_cnt = 0
     for idx,b in enumerate(buttonlist):
         datacache[b.dataref] = None
         if b.dreftype != DREF_TYPE.CMD and b.led != None:
             print(f"register dataref {b.dataref}")
             xp.AddDataRef(b.dataref, 3)
+            dataref_cnt += 1
     for d in datarefs:
         print(f"register dataref {d[0]}")
         #for i in range(PAGE_CHARS_PER_LINE - 1, -1, -1): # registering backward gives us better options to detect line ending, it is on the first message
         for i in range(PAGE_CHARS_PER_LINE):
             #datacache[d[0]] = None
             xp.AddDataRef(d[0]+'['+str(i)+']', d[1])
+            dataref_cnt += 1
+    print(f"registered {dataref_cnt} datarefs")
 
 
 def xor_bitmask(a, b, bitmask):
