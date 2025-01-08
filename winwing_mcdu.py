@@ -10,6 +10,7 @@ from enum import Enum, IntEnum
 import os
 import socket
 import struct
+from termcolor import colored, cprint
 
 #for raw usb
 import re
@@ -571,7 +572,8 @@ def set_datacache(values):
             s = f" |{''.join(page[i])}"
             s.ljust(PAGE_CHARS_PER_LINE)
             for i in range(PAGE_CHARS_PER_LINE):
-                print(s[i*2+1], end='')
+                #print(s[i*2+1], end='')
+                cprint(s[i*2+1], colorname_from_char(s[i*2]), end='')
             print('|')
         print("|------- COLORS ---------|")
         for i in range(PAGE_LINES):
@@ -606,6 +608,21 @@ def set_datacache(values):
         sleep(0.05)
 
         # TODO EFISL
+
+def colorname_from_char(c):
+    c = c.lower()
+    if c == 'w': return 'white'
+    if c == 'b': return 'blue'
+    if c == 'c': return 'cyan'
+    if c == 'g': return 'green'
+    if c == 'a': return 'yellow'
+    if c == 'y': return 'light_yellow'
+    if c == 'm': return 'magenta'
+    if c == 's': return 'white'
+    if c == None: return 'white'
+    if c == ' ': return 'white'
+    print(f"color-code {c} not known")
+    return 'white'
 
 
 def kb_wait_quit_event():
