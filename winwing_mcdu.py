@@ -547,16 +547,18 @@ def set_datacache(values):
         else:
             if color == 's':
                 color = None
-            if "MCDU1s" not in v:
-                color = chr(int(color) - 40) # convert y in Y, a in A, ... if not small font
+            if "MCDU1s" not in v and color != None:
+                color = chr(ord(color) - 32) # convert y in Y, a in A, ... if not small font
+            if color == None:
+                color = 'S' # symbol
         if "MCDU1VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
-        pos = pos * 2 + 1 # we decode color, char, so 2 entries per displayed char
+        pos = pos * 2 # we decode color, char, so 2 entries per displayed char
 
         # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
         if data_valid: # we received all mcdu data from page
             if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
-                newline = page_tmp[line][:pos] + list(chr(val)) + page_tmp[line][pos+1:] # set char # todo set color
+                newline = page_tmp[line][:pos] + list(''.join(str(color))) +list(chr(val)) + page_tmp[line][pos+2:] # set char # todo set color
                 page_tmp[line] = newline
                 if page[line][pos] != newline[pos]:
                     new = True
@@ -570,6 +572,13 @@ def set_datacache(values):
             s.ljust(PAGE_CHARS_PER_LINE)
             for i in range(PAGE_CHARS_PER_LINE):
                 print(s[i*2+1], end='')
+            print('|')
+        print("|------- COLORS ---------|")
+        for i in range(PAGE_LINES):
+            s = f"| {''.join(page[i])}"
+            s.ljust(PAGE_CHARS_PER_LINE)
+            for i in range(PAGE_CHARS_PER_LINE):
+                print(s[i*2], end='')
             print('|')
         print("|------------------------|")
         print("")
