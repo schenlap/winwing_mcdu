@@ -557,11 +557,11 @@ def set_datacache(values):
         pos = pos * 2 # we decode color, char, so 2 entries per displayed char
 
         # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
-        if data_valid: # we received all mcdu data from page
+        if data_valid: # we received mcdu data
             if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
-                newline = page_tmp[line][:pos] + list(''.join(str(color))) +list(chr(val)) + page_tmp[line][pos+2:] # set char # todo set color
+                newline = page_tmp[line][:pos] + list(''.join(str(color))) +list(chr(val)) + page_tmp[line][pos+PAGE_BYTES_PER_CHAR:] # set char # todo set color
                 page_tmp[line] = newline
-                if page[line][pos] != newline[pos]:
+                if page[line][pos + 1] != newline[pos + 1]:
                     new = True
             else:
                 print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
