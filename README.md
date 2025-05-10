@@ -1,6 +1,41 @@
 # winwinf_mcdu
 Use winwing mcdu on Linuc and Mac for X-Plane Toliss Airbus.
 
+## Status
+Currently there is no usb communication. The scripts fetsches all necessery data from mcdu and displays a mcdu unit in the console.
+```
+|------ MCDU SCREEN -----|
+|          INIT        <>|
+| CO RTE        FROM/TO  |
+|##########     #### ####|
+|ALTN/CO RTE             |
+|----/----------         |
+|FLT NBR                 |
+|########                |
+|LAT                 LONG|
+|----.-          -----.--|
+|COST INDEX              |
+|---                WIND>|
+|CRZ FL/TEMP       TROPO |
+|-----/---`         36090|
+|                        |
+|------- COLORS ---------|
+|          WWWW        SS|
+| WW WWW        WWWWWWW  |
+|SSSSSSSSSS     SSSS SSSS|
+|WWWWWWW WWW             |
+|WWWWWWWWWWWWWWW         |
+|WWW WWW                 |
+|SSSSSSSS                |
+|WWW                 WWWW|
+|WWWWWW          WWWWWWWW|
+|WWWW WWWWW              |
+|WWW                WWWWW|
+|WWW WWWWWWW       WWWWW |
+|WWWWWWWWWW         bbbbb|
+|                        |
+|------------------------|
+```
 
 
 ## developer documentation
