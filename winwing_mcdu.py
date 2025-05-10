@@ -33,7 +33,8 @@ import XPlaneUdp
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
 PAGE_CHARS_PER_LINE = 25
-PAGE_BYTEs_PER_LINE = PAGE_CHARS_PER_LINE * 2
+PAGE_BYTES_PER_CHAR = 2
+PAGE_BYTEs_PER_LINE = PAGE_CHARS_PER_LINE * PAGE_BYTES_PER_CHAR
 
 #@unique
 class DEVICEMASK(IntEnum):
@@ -496,6 +497,7 @@ def set_datacache(values):
     global page
     #print(f'###')
     new = False
+    spw_line_ended = False
     vertslew_key = None
     page_tmp = [list('                                                  ')] * PAGE_LINES
     for v in values:
@@ -504,7 +506,7 @@ def set_datacache(values):
         data_valid = False
         color = v.split('[')[0][-1]
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
-        if val == 0 or val == 0x20:
+        if val == 0x20 or (val == 0 and not 'MCDU1spw' in v):
             continue
         #if val == '`':
         #    val = '°'
@@ -538,6 +540,10 @@ def set_datacache(values):
         if "MCDU1spw" in v: # and color == 'w':
             line = 13
             pos = int(v.split('[')[1].split(']')[0])
+            if val == 0:
+                spw_line_ended = True
+            if spw_line_ended:
+                val = 0x20
             data_valid = True
         else:
             if color == 's':
