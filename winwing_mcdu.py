@@ -37,11 +37,14 @@ PAGE_BYTEs_PER_LINE = PAGE_CHARS_PER_LINE * 2
 
 #@unique
 class DEVICEMASK(IntEnum):
-    NONE = 0
-    MCDU = 1
-    PFP3N = 2
-    PFP4 = 4
-    PFP7 = 8
+    NONE =  0
+    MCDU =  0x01
+    PFP3N = 0x02
+    PFP4 =  0x04
+    PFP7 =  0x08
+    CAP =   0x10
+    FO =    0x20
+    OBS =   0x40
 
 
 class BUTTON(Enum):
@@ -103,7 +106,6 @@ flags = dict([("spd", Flag('spd-mach_spd', Byte.H0, 0x01)),
 
 
 def winwing_mcdu_set_leds(ep, leds, brightness):
-    return # TODO
     if isinstance(leds, list):
         for i in range(len(leds)):
             winwing_mcdu_set_led(ep, leds[i], brightness)
@@ -111,13 +113,7 @@ def winwing_mcdu_set_leds(ep, leds, brightness):
         winwing_mcdu_set_led(ep, leds, brightness)
 
 def winwing_mcdu_set_led(ep, led, brightness):
-    return # TODO
-    if led.value < 100: # MCDU
-        data = [0x02, 0x10, 0xbb, 0, 0, 3, 0x49, led.value, brightness, 0,0,0,0,0]
-    elif device_config & ~DEVICEMASK.MCDU:
-        # TODO set leds PFP*
-        print(f"setting leds on PFP* not supported")
-        return
+    data = [0x02, 0x10, 0xbb, 0, 0, 3, 0x49, led.value, brightness, 0,0,0,0,0]
     if 'data' in locals():
       cmd = bytes(data)
       ep.write(cmd)
@@ -291,7 +287,7 @@ usb_retry = False
 xp = None
 
 
-def create_button_list_fcu():
+def create_button_list_mcdu():
     buttonlist.append(Button(0, "LSK1L", "AirbusFBW/MCDU1LSK1L", DREF_TYPE.CMD, BUTTON.TOGGLE))
     buttonlist.append(Button(1, "LSK2L", "AirbusFBW/MCDU1LSK2L", DREF_TYPE.CMD, BUTTON.TOGGLE))
     buttonlist.append(Button(2, "LSK3L", "AirbusFBW/MCDU1LSK3L", DREF_TYPE.CMD, BUTTON.TOGGLE))
@@ -381,7 +377,7 @@ def xor_bitmask(a, b, bitmask):
     return (a & bitmask) != (b & bitmask)
 
 
-def fcu_button_event():
+def mcdu_button_event():
     #print(f'events: press: {buttons_press_event}, release: {buttons_release_event}')
     for b in buttonlist:
         if not any(buttons_press_event) and not any(buttons_release_event):
@@ -440,7 +436,7 @@ def fcu_button_event():
                 xp.WriteDataRef(b.dataref, 0)
 
 
-def fcu_create_events(ep_in, ep_out):
+def mcdu_create_events(ep_in, ep_out):
         global values
         sleep(2) # wait for values to be available
         buttons_last = 0
@@ -461,11 +457,9 @@ def fcu_create_events(ep_in, ep_out):
             if len(data_in) != 41:
                 print(f'rx data count {len(data_in)} not valid')
                 continue
-            buttons=data_in[1] | (data_in[2] << 8) | (data_in[3] << 16) | (data_in[4] << 24) # FCU
-            if device_config & DEVICEMASK.EFISR:
-                buttons |= (data_in[9] << 32) | (data_in[10] << 40 ) | (data_in[11] << 48) | (data_in[12] << 56)
-            if device_config & DEVICEMASK.EFISL:
-                buttons |= (data_in[5] << 64) | (data_in[6] << 72 ) | (data_in[7] << 80) | (data_in[8] << 88)
+            buttons = data_in[1] | (data_in[2] << 8) | (data_in[3] << 16) | (data_in[4] << 24)
+            buttons |= (data_in[5] << 64) | (data_in[6] << 72 ) | (data_in[7] << 80) | (data_in[8] << 88)
+            buttons |= (data_in[9] << 32) | (data_in[10] << 40 ) | (data_in[11] << 48)# | (data_in[12] << 56)
             for i in range (BUTTONS_CNT):
                 mask = 0x01 << i
                 if xor_bitmask(buttons, buttons_last, mask):
@@ -474,7 +468,7 @@ def fcu_create_events(ep_in, ep_out):
                         buttons_press_event[i] = 1
                     else:
                         buttons_release_event[i] = 1
-                    fcu_button_event()
+                    mcdu_button_event()
             buttons_last = buttons
 
 
@@ -647,8 +641,8 @@ def find_usblib():
     print(f"*** No usblib found. Install it with:")
     print(f"***   debian: apt install libusb1")
     print(f"***   mac: brew install libusb")
-    print(f"***   If you get this warning and fcu is working, please open an issue at")
-    print(f"***   https://github.com/schenlap/winwing_fcu")
+    print(f"***   If you get this warning and mcdu is working, please open an issue at")
+    print(f"***   https://github.com/schenlap/winwing_mcdu")
     return None
 
 
@@ -661,9 +655,12 @@ def main():
     backend = find_usblib()
 
     devlist = [{'vid':0x4098, 'pid':0xbb10, 'name':'MCDU', 'mask':DEVICEMASK.MCDU},
-               {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not supported)', 'mask':DEVICEMASK.PFP3N},
-               {'vid':0x4098, 'pid':0xbc1d, 'name':'PFP 4 (not supported)', 'mask':DEVICEMASK.PFP4},
-               {'vid':0x4098, 'pid':0xba01, 'name':'PFP 7 (not supported)', 'mask':DEVICEMASK.PFP7}]
+               {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Captain', 'mask':DEVICEMASK.MCDU | DEVICEMASK.CAP},
+               {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - First Offizer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.FO},
+               {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Observer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.OBS},
+               {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not tested)', 'mask':DEVICEMASK.PFP3N},
+               {'vid':0x4098, 'pid':0xbc1d, 'name':'PFP 4 (not tested)', 'mask':DEVICEMASK.PFP4},
+               {'vid':0x4098, 'pid':0xba01, 'name':'PFP 7 (not tested)', 'mask':DEVICEMASK.PFP7}]
 
     for d in devlist:
         print(f"now searching for winwing {d['name']} ... ", end='')
@@ -692,7 +689,7 @@ def main():
 
     print('compatible with X-Plane 11/12 and all Toliss Airbus')
 
-    create_button_list_fcu()
+    create_button_list_mcdu()
     datacache['baro_efisr_last'] = None
     datacache['baro_efisl_last'] = None
 
@@ -703,12 +700,12 @@ def main():
     #if device_config & DEVICEMASK.EFISL:
     #  leds.append(Leds.EFISL_BACKLIGHT)
 
-    winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 180)
-    winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 80)
-    winwing_mcdu_set_lcd(mcdu_out_endpoint, "   ", "   ", "Schen", " lap")
+    #winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 180)
+    #winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 80)
+    #winwing_mcdu_set_lcd(mcdu_out_endpoint, "   ", "   ", "Schen", " lap")
     #TODO set EFISL
 
-    usb_event_thread = Thread(target=fcu_create_events, args=[mcdu_in_endpoint, mcdu_out_endpoint])
+    usb_event_thread = Thread(target=mcdu_create_events, args=[mcdu_in_endpoint, mcdu_out_endpoint])
     usb_event_thread.start()
 
     kb_quit_event_thread = Thread(target=kb_wait_quit_event)
@@ -739,7 +736,7 @@ def main():
             values = xp.GetValues()
             values_processed.wait()
             #print(values)
-            #values will be handled in fcu_create_events to write to usb only in one thread.
+            #values will be handled in mcdu_create_events to write to usb only in one thread.
             # see function set_datacache(values)
         except XPlaneUdp.XPlaneTimeout:
             print(f'X-Plane timeout, could not connect on port {xp.BeaconData["Port"]}')
