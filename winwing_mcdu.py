@@ -506,6 +506,9 @@ def set_datacache(values):
         val = int(values[v])
         data_valid = False
         color = v.split('[')[0][-1]
+        font_small = 1 # 0 .. normal, 1 .. small
+        if 'cont' in v or 'spw' in v:
+            font_small = 0 # normal
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0x20 or (val == 0 and not 'MCDU1spw' in v):
             continue
@@ -573,6 +576,8 @@ def set_datacache(values):
             if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
                 newline = page_tmp[line]
                 newline[pos] = str(color)
+                if PAGE_BYTES_PER_CHAR == 3:
+                    newline[pos + 1] = font_small
                 newline[pos + PAGE_BYTES_PER_CHAR - 1] = chr(val)
                 page_tmp[line] = newline
 
@@ -619,6 +624,13 @@ def set_datacache(values):
             cprint('|', 'white', end='')
             for j in range(PAGE_CHARS_PER_LINE):
                 print(page[i][j * PAGE_BYTES_PER_CHAR], end='') # TODO font and color, not just color
+            print('|')
+        print("|------------------------|")
+        print("|-------  FONT  ---------|")
+        for i in range(PAGE_LINES):
+            cprint('|', 'white', end='')
+            for j in range(PAGE_CHARS_PER_LINE):
+                print(page[i][j * PAGE_BYTES_PER_CHAR + 1], end='') # TODO font and color, not just color
             print('|')
         print("|------------------------|")
         print("")
