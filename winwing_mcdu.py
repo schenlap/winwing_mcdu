@@ -565,7 +565,8 @@ def set_datacache(values):
             if color == None:
                 color = 'm' # symbol
         if "MCDU1VertSlewKeys" in v:
-            vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
+            vertslew_key = val # 1: up/down, 2: up, 3: down
+
         pos = pos * PAGE_BYTES_PER_CHAR # we decode color and font (2 bytes) and char(1 byte) = sum 3 bytes per char
 
         if data_valid: # we received mcdu data
@@ -574,12 +575,29 @@ def set_datacache(values):
                 newline[pos] = str(color)
                 newline[pos + PAGE_BYTES_PER_CHAR - 1] = chr(val)
                 page_tmp[line] = newline
+
+                # reset vertslew_keys to not trigger an continous redraw
+                page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
+                page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
+
                 if page[line][pos + PAGE_BYTES_PER_CHAR - 1] != newline[pos + PAGE_BYTES_PER_CHAR - 1]:
                     new = True
             else:
                 print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
     if new:
         page = page_tmp.copy()
+        up = ' '
+        down = ' '
+        if vertslew_key == 1:
+            up = '🠉'
+            down = '🠋'
+        elif vertslew_key == 2:
+            up = '🠉'
+        elif vertslew_key == 3:
+            down = '🠋'
+
+        page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = up
+        page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = down
         print("|------ MCDU SCREEN -----|")
         for i in range(PAGE_LINES):
             cprint('|', 'white', end='')
