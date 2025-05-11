@@ -32,9 +32,10 @@ import XPlaneUdp
 
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
-PAGE_CHARS_PER_LINE = 25
-PAGE_BYTES_PER_CHAR = 2
-PAGE_BYTEs_PER_LINE = PAGE_CHARS_PER_LINE * PAGE_BYTES_PER_CHAR
+PAGE_CHARS_PER_LINE = 24
+PAGE_BYTES_PER_CHAR = 3
+PAGE_BYTES_PER_LINE = PAGE_CHARS_PER_LINE * PAGE_BYTES_PER_CHAR
+PAGE_BYTES_PER_PAGE = PAGE_BYTES_PER_LINE * PAGE_LINES
 
 #@unique
 class DEVICEMASK(IntEnum):
@@ -490,7 +491,8 @@ def set_button_led_lcd(dataref, v):
                 led_brightness = v
             break
 
-page = [list('                                                  ')] * PAGE_LINES
+page = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINES)]
+
 def set_datacache(values):
     #global datacache
     #global exped_led_state
@@ -499,7 +501,7 @@ def set_datacache(values):
     new = False
     spw_line_ended = False
     vertslew_key = None
-    page_tmp = [list('                                                  ')] * PAGE_LINES
+    page_tmp = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINES)]
     for v in values:
         pos = 0
         val = int(values[v])
@@ -554,14 +556,15 @@ def set_datacache(values):
                 color = 'S' # symbol
         if "MCDU1VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
-        pos = pos * 2 # we decode color, char, so 2 entries per displayed char
+        pos = pos * PAGE_BYTES_PER_CHAR # we decode color and font (2 bytes) and char(1 byte) = sum 3 bytes per char
 
-        # we write all colors in one buffer for now. Maybe we split it later when we know how winwing mcfu handles colors
         if data_valid: # we received mcdu data
             if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
-                newline = page_tmp[line][:pos] + list(''.join(str(color))) +list(chr(val)) + page_tmp[line][pos+PAGE_BYTES_PER_CHAR:] # set char # todo set color
+                newline = page_tmp[line]
+                newline[pos] = str(color)
+                newline[pos + PAGE_BYTES_PER_CHAR - 1] = chr(val)
                 page_tmp[line] = newline
-                if page[line][pos + 1] != newline[pos + 1]:
+                if page[line][pos + PAGE_BYTES_PER_CHAR - 1] != newline[pos + PAGE_BYTES_PER_CHAR - 1]:
                     new = True
             else:
                 print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
@@ -569,18 +572,15 @@ def set_datacache(values):
         page = page_tmp.copy()
         print("|------ MCDU SCREEN -----|")
         for i in range(PAGE_LINES):
-            s = f" |{''.join(page[i])}"
-            s.ljust(PAGE_CHARS_PER_LINE)
-            for i in range(PAGE_CHARS_PER_LINE):
-                #print(s[i*2+1], end='')
-                cprint(s[i*2+1], colorname_from_char(s[i*2]), end='')
+            cprint('|', 'white', end='')
+            for j in range(PAGE_CHARS_PER_LINE):
+                cprint(page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1], colorname_from_char(page[i][j * PAGE_BYTES_PER_CHAR]), end='')
             print('|')
         print("|------- COLORS ---------|")
         for i in range(PAGE_LINES):
-            s = f"| {''.join(page[i])}"
-            s.ljust(PAGE_CHARS_PER_LINE)
-            for i in range(PAGE_CHARS_PER_LINE):
-                print(s[i*2], end='')
+            cprint('|', 'white', end='')
+            for j in range(PAGE_CHARS_PER_LINE):
+                print(page[i][j * PAGE_BYTES_PER_CHAR], end='') # TODO font and color, not just color
             print('|')
         print("|------------------------|")
         print("")
