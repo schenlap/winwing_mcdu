@@ -272,7 +272,7 @@ array_datarefs = [
     #("AirbusFBW/MCDU1scont5y", None),
     #("AirbusFBW/MCDU1scont6y", None),
     ("AirbusFBW/MCDU1spw", 4), # textbox
-    ("AirbusFBW/MCDU1VertSlewKeys", None)
+    ("AirbusFBW/MCDU1VertSlewKeys", None) # TODO not an array
   ]
 
 
