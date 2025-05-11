@@ -535,10 +535,10 @@ def set_datacache(values):
                 color = 'w'
             if chr(val) == '4':
                 val = 60 # '<', should be a small orange arrow in cont
-                color = 'm'
+                color = 'a'
             if chr(val) == 'E':
                 val = 35 # '#', should be an orange box
-                color = 'm'
+                color = 'a'
             #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if "MCDU1title" in v or "MCDU1stitle" in v:
             pos = int(v.split('[')[1].split(']')[0])
