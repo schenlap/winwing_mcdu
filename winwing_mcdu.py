@@ -26,8 +26,6 @@ import usb.util
 import XPlaneUdp
 
 # TODOLIST
-#  * CLR in textbox does not update, special handling necessary
-#  * no colors
 #  * show vertslew_key
 
 BUTTONS_CNT = 99 # TODO
@@ -586,7 +584,11 @@ def set_datacache(values):
         for i in range(PAGE_LINES):
             cprint('|', 'white', end='')
             for j in range(PAGE_CHARS_PER_LINE):
-                cprint(page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1], colorname_from_char(page[i][j * PAGE_BYTES_PER_CHAR]), end='')
+                val = page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]
+                if val == '#':
+                    #val = '▯'
+                    val = '☐'
+                cprint(val, colorname_from_char(page[i][j * PAGE_BYTES_PER_CHAR]), end='')
             print('|')
         print("|------- COLORS ---------|")
         for i in range(PAGE_LINES):
