@@ -606,6 +606,12 @@ def set_datacache(values):
                 if val == '#':
                     #val = '▯'
                     val = '☐'
+                if val == '`':
+                    val = '°'
+                if val == '>':
+                    val = '🠊'
+                if val == '<':
+                    val = '🠈'
                 cprint(val, colorname_from_char(page[i][j * PAGE_BYTES_PER_CHAR]), end='')
             print('|')
         print("|------- COLORS ---------|")
