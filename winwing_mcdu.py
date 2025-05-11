@@ -514,24 +514,35 @@ def set_datacache(values):
         #if val == '`':
         #    val = '°'
         if color == 's':
-            if chr(val) == 'A': val = 91 # '['
-            if chr(val) == 'B': val = 93 # ']'
-            if chr(val) == '0': val = 60 # '<', should be a small blue arrow
-            if chr(val) == '1': val = 62 # '>', should be a small arrow
-            if chr(val) == '2': val = 60 # '<', should be a small white arrow in title
-            if chr(val) == '3': val = 62 # '>', should be a small white arrow in title
-            if chr(val) == '4': val = 60 # '<', should be a small orange arrow in cont
-            if chr(val) == 'E': val = 35 # '#', should be an orange box
+            if chr(val) == 'A':
+                val = 91 # '[', should be blue
+                color = 'b'
+            if chr(val) == 'B':
+                val = 93 # ']', should be blue
+                color = 'b'
+            if chr(val) == '0':
+                val = 60 # '<', should be a small blue arrow
+                color = 'b'
+            if chr(val) == '1':
+                val = 62 # '>', should be a small bluearrow
+                color = 'b'
+            if chr(val) == '2':
+                val = 60 # '<', should be a small white arrow in title
+                color = 'w'
+            if chr(val) == '3':
+                val = 62 # '>', should be a small white arrow in title
+                color = 'w'
+            if chr(val) == '4':
+                val = 60 # '<', should be a small orange arrow in cont
+                color = 'm'
+            if chr(val) == 'E':
+                val = 35 # '#', should be an orange box
+                color = 'm'
             #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if "MCDU1title" in v or "MCDU1stitle" in v:
             pos = int(v.split('[')[1].split(']')[0])
             line = 0
             data_valid = True
-            #print(f"pos: {pos}, val: {chr(val)}:{val}")
-            #newline = page[0][:pos] + list(chr(val)) + page[0][pos+1:]
-            #if page[0] != newline:
-            #    page[0] = newline
-            #    new = True
         if "MCDU1label" in v:
             line = int(v.split('label')[1][0]) * 2 - 1
             pos = int(v.split('[')[1].split(']')[0])
@@ -554,7 +565,7 @@ def set_datacache(values):
             if "MCDU1s" not in v and color != None:
                 color = chr(ord(color) - 32) # convert y in Y, a in A, ... if not small font
             if color == None:
-                color = 'S' # symbol
+                color = 'm' # symbol
         if "MCDU1VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down TODO show slew key
         pos = pos * PAGE_BYTES_PER_CHAR # we decode color and font (2 bytes) and char(1 byte) = sum 3 bytes per char
