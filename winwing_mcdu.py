@@ -118,13 +118,31 @@ def winwing_mcdu_set_led(ep, led, brightness):
       cmd = bytes(data)
       ep.write(cmd)
 
+ww_col_map = {
+        'L' : 0x0000, # black with grey background
+        'A' : 0x0021, # amber
+        'W' : 0x0042, # white
+        'B' : 0x0063, # cyan
+        'G' : 0x0084, # green
+        'M' : 0x00A5, # magenta
+        'R' : 0x00C6, # red
+        'Y' : 0x00E7, # yellow
+        'E' : 0x0108  # grey
+}
 
 def lcd_set_from_page(ep, mcdupage):
     buf = [0xf2]
     for i in range(PAGE_LINES):
         for j in range(PAGE_CHARS_PER_LINE):
-            buf.append(0x42)
-            buf.append(0x0)
+            color = mcdupage[i][j * PAGE_BYTES_PER_CHAR]
+            font_small = mcdupage[i][j * PAGE_BYTES_PER_CHAR + 1]
+            col_winwing = ww_col_map.get(color.upper())
+            if col_winwing == None:
+                col_winwing = 0x0042
+            if font_small == 1:
+                col_winwing = col_winwing + 0x016b
+            buf.append(col_winwing & 0x0ff)
+            buf.append((col_winwing >> 8) & 0xff)
             buf.append(ord(mcdupage[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]))
             if len(buf) >= 64:
                 try:
