@@ -2,7 +2,11 @@
 Use winwing mcdu on Linuc and Mac for X-Plane Toliss Airbus.
 
 ## Status
-Currently there is no usb communication. The scripts fetsches all necessery data from mcdu and displays a mcdu unit in the console.
+The scripts fetsches all necessery data from mcdu and displays a mcdu unit in the console and prints all text on winwing mcdu. 
+It is only useable as pilot-mcdu now.
+
+
+![mcdu demo image](./documentation/A319MCDU1.jpg)
 ```
 |------ MCDU SCREEN -----|
 |          INIT        <>|
@@ -37,9 +41,37 @@ Currently there is no usb communication. The scripts fetsches all necessery data
 |------------------------|
 ```
 
+## Installation
+
+#### Debian based system
+1. clone the repo where you want
+2. copy `udev/71-winwing.rules` to `/etc/udev/rules.d`  
+`sudo cp udev/71-winwing.rules /etc/udev/rules.d/`
+3. install dependencies (on debian based systems)  
+`sudo aptitude install python3-usb`
+4. start script (with udev rule no sudo needed): `python3 ./winwing_mcdu.py` when X-Plane with Toliss aircraft is loaded.
+
+
+#### MAC-OS
+
+1. clone the repo where you want
+2. install homebrew
+3. install dependencies
+`python3 -m pip install pyusb`
+4. brew install libusb
+5. let pyusb find libusb: `ln -s /opt/homebrew/lib ~/lib` 
+6. start script with sudo: `sudo python3 ./winwing_mcdu.py` when X-Plane with Toliss aircraft is loaded.
+7. A detailed installation instruction can be found on [x-plane forum](https://forums.x-plane.org/index.php?/forums/topic/310045-winwing-fcu-on-plane-12-on-a-mac-studio/&do=findComment&comment=2798635).
+
+## Use FCU
+1. start X-Plane
+2. load Toliss A319
+3. start script as written above
+4. enjoy flying (and report bugs :-)  )
+
 
 ## developer documentation
-See [documention](./documentation/README.md) for developers
+See [documention](./documentation/README.md) for developers. TODO
 
 ## Notes
 Use at your own risk. Updates to the MCDU can make the script incompatible.
