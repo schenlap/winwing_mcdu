@@ -119,6 +119,24 @@ def winwing_mcdu_set_led(ep, led, brightness):
       ep.write(cmd)
 
 
+def lcd_set_from_page(ep, mcdupage):
+    buf = [0xf2]
+    for i in range(PAGE_LINES):
+        for j in range(PAGE_CHARS_PER_LINE):
+            buf.append(0x42)
+            buf.append(0x0)
+            buf.append(ord(mcdupage[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]))
+            if len(buf) >= 64:
+                try:
+                    ep.write(bytes(buf))
+                except:
+                    print("")
+                    print(f"ERROR AT: line:{i+1}, pos:{j+1}")
+                    print(f"buf: {buf}")
+                    raise('Error at bytes')
+                buf = [0xf2]
+
+
 def lcd_write_line_repeated(ep, s, repeat = 16):
     line1=bytes([ord(char) for char in s])
     c = 0
@@ -640,8 +658,9 @@ def set_datacache(values):
         elif vertslew_key == 3:
             down = '🠋'
 
-        page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = up
-        page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = down
+        # TODO reenable vert slew keys, they make an error in usb write also we do this on a copy only
+        #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = up
+        #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = down
         print("|------ MCDU SCREEN -----|")
         for i in range(PAGE_LINES):
             cprint('|', 'white', end='')
@@ -688,12 +707,11 @@ def set_datacache(values):
     if new == True or usb_retry == True:
 
         if True:
-            try: # dataref may not be received already, even when connected
-                exped_led_state_desired = datacache['AirbusFBW/APVerticalMode'] >= 112
-            except:
-                exped_led_state_desired = False
-
-        #winwing_mcdu_set_lcd(mcdu_out_endpoint, speed, heading, alt, vs)
+            #try: # dataref may not be received already, even when connected
+            #    exped_led_state_desired = datacache['AirbusFBW/APVerticalMode'] >= 112
+            #except:
+            #    exped_led_state_desired = False
+            lcd_set_from_page(mcdu_out_endpoint, page_tmp)
         sleep(0.05)
 
         # TODO EFISL
