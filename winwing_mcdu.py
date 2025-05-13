@@ -360,9 +360,6 @@ array_datarefs = [
 buttons_press_event = [0] * BUTTONS_CNT
 buttons_release_event = [0] * BUTTONS_CNT
 
-mcdu_out_endpoint = None
-mcdu_in_endpoint = None
-
 usb_retry = False
 
 xp = None
@@ -527,7 +524,7 @@ def mcdu_button_event():
                 xp.WriteDataRef(b.dataref, 0)
 
 
-def mcdu_create_events(ep_in, ep_out):
+def mcdu_create_events(usb_mgr):
         global values
         sleep(2) # wait for values to be available
         buttons_last = 0
@@ -536,11 +533,11 @@ def mcdu_create_events(ep_in, ep_out):
                 sleep(1)
                 continue
 
-            set_datacache(values)
+            set_datacache(usb_mgr, values)
             values_processed.set()
             sleep(0.005)
             try:
-                data_in = ep_in.read(0x81, 105)
+                data_in = usb_mgr.ep_in.read(0x81, 105)
             except Exception as error:
                 # print(f' *** continue after usb-in error: {error} ***') # TODO
                 sleep(0.5) # TODO remove
@@ -584,7 +581,7 @@ def set_button_led_lcd(dataref, v):
 
 page = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINES)]
 
-def set_datacache(values):
+def set_datacache(usb_mgr, values):
     #global datacache
     #global exped_led_state
     global page
@@ -746,7 +743,7 @@ def set_datacache(values):
             #    exped_led_state_desired = datacache['AirbusFBW/APVerticalMode'] >= 112
             #except:
             #    exped_led_state_desired = False
-            lcd_set_from_page(mcdu_out_endpoint, page_tmp)
+            lcd_set_from_page(usb_mgr.ep_out, page_tmp)
         sleep(0.05)
 
         # TODO EFISL
@@ -794,54 +791,81 @@ def find_usblib():
     return None
 
 
+class UsbManager:
+    def __init__(self):
+        self.backend = self.find_usb_backend()
+        self.device = None
+        self.ep_in = None
+        self.ep_out = None
+
+    def find_usb_backend(self):
+        paths = [
+            '/opt/homebrew/lib/libusb-1.0.0.dylib',
+            '/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0',
+            '/usr/lib/libusb-1.0.so.0'
+        ]
+        for path in paths:
+            backend = usb.backend.libusb1.get_backend(find_library=lambda x: path)
+            if backend:
+                print(f"Using USB backend: {path}")
+                return backend
+        raise RuntimeError("No compatible USB backend found")
+
+    def connect_device(self, vid: int, pid: int):
+        self.device = usb.core.find(idVendor=vid, idProduct=pid, backend=self.backend)
+        if self.device is None:
+            raise RuntimeError("Device not found")
+
+        interface = self.device[0].interfaces()[0]
+        if self.device.is_kernel_driver_active(interface.bInterfaceNumber):
+            self.device.detach_kernel_driver(interface.bInterfaceNumber)
+        self.device.set_configuration()
+
+        endpoints = interface.endpoints()
+        self.ep_out = endpoints[1]
+        self.ep_in = endpoints[0]
+        print("Device connected and endpoints assigned.")
+
+    def find_device(self):
+        device_config = 0
+        devlist = [{'vid':0x4098, 'pid':0xbb10, 'name':'MCDU', 'mask':DEVICEMASK.MCDU},
+                   {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Captain', 'mask':DEVICEMASK.MCDU | DEVICEMASK.CAP},
+                   {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - First Offizer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.FO},
+                   {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Observer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.OBS},
+                   {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not tested)', 'mask':DEVICEMASK.PFP3N},
+                   {'vid':0x4098, 'pid':0xbc1d, 'name':'PFP 4 (not tested)', 'mask':DEVICEMASK.PFP4},
+                   {'vid':0x4098, 'pid':0xba01, 'name':'PFP 7 (not tested)', 'mask':DEVICEMASK.PFP7}]
+        for d in devlist:
+            print(f"now searching for winwing {d['name']} ... ", end='')
+            device = usb.core.find(idVendor=d['vid'], idProduct=d['pid'], backend=self.backend)
+            if device is not None:
+                print(f"found")
+                device_config |= d['mask']
+                return device, d['pid'], device_config
+                break
+            else:
+                print(f"not found")
+
+
 def main():
     global xp
-    global mcdu_in_endpoint, mcdu_out_endpoint
     global values, xplane_connected
     global device_config
 
-    backend = find_usblib()
-
-    devlist = [{'vid':0x4098, 'pid':0xbb10, 'name':'MCDU', 'mask':DEVICEMASK.MCDU},
-               {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Captain', 'mask':DEVICEMASK.MCDU | DEVICEMASK.CAP},
-               {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - First Offizer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.FO},
-               {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Observer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.OBS},
-               {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not tested)', 'mask':DEVICEMASK.PFP3N},
-               {'vid':0x4098, 'pid':0xbc1d, 'name':'PFP 4 (not tested)', 'mask':DEVICEMASK.PFP4},
-               {'vid':0x4098, 'pid':0xba01, 'name':'PFP 7 (not tested)', 'mask':DEVICEMASK.PFP7}]
-
-    for d in devlist:
-        print(f"now searching for winwing {d['name']} ... ", end='')
-        device = usb.core.find(idVendor=d['vid'], idProduct=d['pid'], backend=backend)
-        if device is not None:
-            print(f"found")
-            device_config |= d['mask']
-            break
-        else:
-            print(f"not found")
+    usb_mgr = UsbManager()
+    device, pid, device_config = usb_mgr.find_device()
 
     if device is None:
         exit(f"No compatible winwing device found, quit")
-        mcdu_out_endpoint = None
-        mcdu_in_endpoint = None
     else:
-        interface = device[0].interfaces()[0]
-        if device.is_kernel_driver_active(interface.bInterfaceNumber):
-            device.detach_kernel_driver(interface.bInterfaceNumber)
-        device.set_configuration()
-        endpoints = device[0].interfaces()[0].endpoints()
-        mcdu_out_endpoint = endpoints[1]
-        mcdu_in_endpoint = endpoints[0]
-
+        usb_mgr.connect_device(vid=0x4098, pid=pid)
 
     print('compatible with X-Plane 11/12 and all Toliss Airbus')
 
     create_button_list_mcdu()
-    datacache['baro_efisr_last'] = None
-    datacache['baro_efisl_last'] = None
 
-    lcd_init(mcdu_out_endpoint)
-    lcd_write_line_repeated(mcdu_out_endpoint, 'www.github.com/schenlap ')
+    lcd_init(usb_mgr.ep_out)
+    lcd_write_line_repeated(usb_mgr.ep_out, 'www.github.com/schenlap ')
 
     leds = [Leds.SCREEN_BACKLIGHT]
     #if device_config & DEVICEMASK.EFISR:
@@ -854,7 +878,7 @@ def main():
     #winwing_mcdu_set_lcd(mcdu_out_endpoint, "   ", "   ", "Schen", " lap")
     #TODO set EFISL
 
-    usb_event_thread = Thread(target=mcdu_create_events, args=[mcdu_in_endpoint, mcdu_out_endpoint])
+    usb_event_thread = Thread(target=mcdu_create_events, args=[usb_mgr])
     usb_event_thread.start()
 
     kb_quit_event_thread = Thread(target=kb_wait_quit_event)
