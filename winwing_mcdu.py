@@ -47,7 +47,7 @@ class DEVICEMASK(IntEnum):
     OBS =   0x40
 
 
-class BUTTON(Enum):
+class ButtonType(Enum):
     SWITCH = 0
     TOGGLE = 1
     SEND_0 = 2
@@ -64,20 +64,20 @@ class Leds(Enum):
     SCREEN_BACKLIGHT = 1 # 0 .. 255
 
 
-class DREF_TYPE(Enum):
+class DrefType(Enum):
     DATA = 0
     CMD = 1
     NONE = 2 # for testing
 
 
+@dataclass
 class Button:
-    def __init__(self, nr, label, dataref = None, dreftype = DREF_TYPE.DATA, button_type = BUTTON.NONE, led = None):
-        self.id = nr
-        self.label = label
-        self.dataref = dataref
-        self.dreftype = dreftype
-        self.type = button_type
-        self.led = led
+    id: int
+    label: str
+    dataref: str = None
+    dreftype: DrefType = DrefType.DATA
+    type: ButtonType = ButtonType.NONE
+    led: Leds = None
 
 values_processed = Event()
 xplane_connected = False
@@ -369,87 +369,87 @@ xp = None
 
 
 def create_button_list_mcdu():
-    buttonlist.append(Button(0, "LSK1L", "AirbusFBW/MCDU1LSK1L", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(1, "LSK2L", "AirbusFBW/MCDU1LSK2L", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(2, "LSK3L", "AirbusFBW/MCDU1LSK3L", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(3, "LSK4L", "AirbusFBW/MCDU1LSK4L", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(4, "LSK5L", "AirbusFBW/MCDU1LSK5L", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(5, "LSK6L", "AirbusFBW/MCDU1LSK6L", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(6, "LSK1R", "AirbusFBW/MCDU1LSK1R", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(7, "LSK2R", "AirbusFBW/MCDU1LSK2R", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(8, "LSK3R", "AirbusFBW/MCDU1LSK3R", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(9, "LSK4R", "AirbusFBW/MCDU1LSK4R", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(10, "LSK5R", "AirbusFBW/MCDU1LSK5R", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(11, "LSK6R", "AirbusFBW/MCDU1LSK6R", DREF_TYPE.CMD, BUTTON.TOGGLE)) # 0x800
-    buttonlist.append(Button(12, "DIRTO", "AirbusFBW/MCDU1DirTo", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(13, "PROG", "AirbusFBW/MCDU1Prog", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(14, "PERF", "AirbusFBW/MCDU1Perf", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(15, "INIT", "AirbusFBW/MCDU1Init", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(16, "DATA", "AirbusFBW/MCDU1Data", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(0, "LSK1L", "AirbusFBW/MCDU1LSK1L", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(1, "LSK2L", "AirbusFBW/MCDU1LSK2L", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(2, "LSK3L", "AirbusFBW/MCDU1LSK3L", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(3, "LSK4L", "AirbusFBW/MCDU1LSK4L", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(4, "LSK5L", "AirbusFBW/MCDU1LSK5L", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(5, "LSK6L", "AirbusFBW/MCDU1LSK6L", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(6, "LSK1R", "AirbusFBW/MCDU1LSK1R", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(7, "LSK2R", "AirbusFBW/MCDU1LSK2R", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(8, "LSK3R", "AirbusFBW/MCDU1LSK3R", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(9, "LSK4R", "AirbusFBW/MCDU1LSK4R", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(10, "LSK5R", "AirbusFBW/MCDU1LSK5R", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(11, "LSK6R", "AirbusFBW/MCDU1LSK6R", DrefType.CMD, ButtonType.TOGGLE)) # 0x800
+    buttonlist.append(Button(12, "DIRTO", "AirbusFBW/MCDU1DirTo", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(13, "PROG", "AirbusFBW/MCDU1Prog", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(14, "PERF", "AirbusFBW/MCDU1Perf", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(15, "INIT", "AirbusFBW/MCDU1Init", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(16, "DATA", "AirbusFBW/MCDU1Data", DrefType.CMD, ButtonType.TOGGLE))
     #17 empty
     #18 BRT
-    buttonlist.append(Button(19, "FPLN", "AirbusFBW/MCDU1Fpln", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(20, "RADNAV", "AirbusFBW/MCDU1RadNav", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    #buttonlist.append(Button(21, "FUEL", "AirbusFBW/MCDU1", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    #buttonlist.append(Button(22, "SEC-FPLN", "AirbusFBW/MCDU1", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(19, "FPLN", "AirbusFBW/MCDU1Fpln", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(20, "RADNAV", "AirbusFBW/MCDU1RadNav", DrefType.CMD, ButtonType.TOGGLE))
+    #buttonlist.append(Button(21, "FUEL", "AirbusFBW/MCDU1", DrefType.CMD, ButtonType.TOGGLE))
+    #buttonlist.append(Button(22, "SEC-FPLN", "AirbusFBW/MCDU1", DrefType.CMD, ButtonType.TOGGLE))
     #23 ATC-COMM
     #24 MCDU MENU
     #25 DIM
-    buttonlist.append(Button(26, "AIRPORT", "AirbusFBW/MCDU1Airport", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(26, "AIRPORT", "AirbusFBW/MCDU1Airport", DrefType.CMD, ButtonType.TOGGLE))
     #27 empty
-    buttonlist.append(Button(28, "SLEW_LEFT", "AirbusFBW/MCDU1SlewLeft", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(29, "SLEW_UP", "AirbusFBW/MCDU1SlewUp", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(30, "SLEW_RIGHT", "AirbusFBW/MCDU1SlewRight", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(31, "SLEW_DOWN", "AirbusFBW/MCDU1SlewDown", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(32, "KEY1", "AirbusFBW/MCDU1Key1", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(33, "KEY2", "AirbusFBW/MCDU1Key2", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(34, "KEY3", "AirbusFBW/MCDU1Key3", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(35, "KEY4", "AirbusFBW/MCDU1Key4", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(36, "KEY5", "AirbusFBW/MCDU1Key5", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(37, "KEY6", "AirbusFBW/MCDU1Key6", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(38, "KEY7", "AirbusFBW/MCDU1Key7", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(39, "KEY8", "AirbusFBW/MCDU1Key8", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(40, "KEY9", "AirbusFBW/MCDU1Key9", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(41, "DOT", "AirbusFBW/MCDU1KeyDecimal", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(42, "KEY0", "AirbusFBW/MCDU1Key0", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(43, "PLUSMINUS", "AirbusFBW/MCDU1KeyPM", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(44, "KEYA", "AirbusFBW/MCDU1KeyA", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(45, "KEYB", "AirbusFBW/MCDU1KeyB", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(46, "KEYC", "AirbusFBW/MCDU1KeyC", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(47, "KEYD", "AirbusFBW/MCDU1KeyD", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(48, "KEYE", "AirbusFBW/MCDU1KeyE", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(49, "KEYF", "AirbusFBW/MCDU1KeyF", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(50, "KEYG", "AirbusFBW/MCDU1KeyG", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(51, "KEYH", "AirbusFBW/MCDU1KeyH", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(52, "KEYI", "AirbusFBW/MCDU1KeyI", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(53, "KEYJ", "AirbusFBW/MCDU1KeyJ", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(54, "KEYK", "AirbusFBW/MCDU1KeyK", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(55, "KEYL", "AirbusFBW/MCDU1KeyL", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(56, "KEYM", "AirbusFBW/MCDU1KeyM", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(57, "KEYN", "AirbusFBW/MCDU1KeyN", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(58, "KEYO", "AirbusFBW/MCDU1KeyO", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(59, "KEYP", "AirbusFBW/MCDU1KeyP", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(60, "KEYQ", "AirbusFBW/MCDU1KeyQ", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(61, "KEYR", "AirbusFBW/MCDU1KeyR", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(62, "KEYS", "AirbusFBW/MCDU1KeyS", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(63, "KEYT", "AirbusFBW/MCDU1KeyT", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(64, "KEYU", "AirbusFBW/MCDU1KeyU", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(65, "KEYV", "AirbusFBW/MCDU1KeyV", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(66, "KEYW", "AirbusFBW/MCDU1KeyW", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(67, "KEYX", "AirbusFBW/MCDU1KeyX", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(68, "KEYY", "AirbusFBW/MCDU1KeyY", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(69, "KEYZ", "AirbusFBW/MCDU1KeyZ", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(70, "SLASH", "AirbusFBW/MCDU1KeySlash", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(71, "SPACE", "AirbusFBW/MCDU1KeySpace", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(72, "OVERFLY", "AirbusFBW/MCDU1KeyOverfly", DREF_TYPE.CMD, BUTTON.TOGGLE))
-    buttonlist.append(Button(73, "Clear", "AirbusFBW/MCDU1KeyClear", DREF_TYPE.CMD, BUTTON.TOGGLE))
+    buttonlist.append(Button(28, "SLEW_LEFT", "AirbusFBW/MCDU1SlewLeft", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(29, "SLEW_UP", "AirbusFBW/MCDU1SlewUp", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(30, "SLEW_RIGHT", "AirbusFBW/MCDU1SlewRight", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(31, "SLEW_DOWN", "AirbusFBW/MCDU1SlewDown", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(32, "KEY1", "AirbusFBW/MCDU1Key1", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(33, "KEY2", "AirbusFBW/MCDU1Key2", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(34, "KEY3", "AirbusFBW/MCDU1Key3", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(35, "KEY4", "AirbusFBW/MCDU1Key4", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(36, "KEY5", "AirbusFBW/MCDU1Key5", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(37, "KEY6", "AirbusFBW/MCDU1Key6", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(38, "KEY7", "AirbusFBW/MCDU1Key7", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(39, "KEY8", "AirbusFBW/MCDU1Key8", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(40, "KEY9", "AirbusFBW/MCDU1Key9", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(41, "DOT", "AirbusFBW/MCDU1KeyDecimal", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(42, "KEY0", "AirbusFBW/MCDU1Key0", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(43, "PLUSMINUS", "AirbusFBW/MCDU1KeyPM", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(44, "KEYA", "AirbusFBW/MCDU1KeyA", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(45, "KEYB", "AirbusFBW/MCDU1KeyB", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(46, "KEYC", "AirbusFBW/MCDU1KeyC", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(47, "KEYD", "AirbusFBW/MCDU1KeyD", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(48, "KEYE", "AirbusFBW/MCDU1KeyE", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(49, "KEYF", "AirbusFBW/MCDU1KeyF", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(50, "KEYG", "AirbusFBW/MCDU1KeyG", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(51, "KEYH", "AirbusFBW/MCDU1KeyH", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(52, "KEYI", "AirbusFBW/MCDU1KeyI", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(53, "KEYJ", "AirbusFBW/MCDU1KeyJ", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(54, "KEYK", "AirbusFBW/MCDU1KeyK", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(55, "KEYL", "AirbusFBW/MCDU1KeyL", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(56, "KEYM", "AirbusFBW/MCDU1KeyM", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(57, "KEYN", "AirbusFBW/MCDU1KeyN", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(58, "KEYO", "AirbusFBW/MCDU1KeyO", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(59, "KEYP", "AirbusFBW/MCDU1KeyP", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(60, "KEYQ", "AirbusFBW/MCDU1KeyQ", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(61, "KEYR", "AirbusFBW/MCDU1KeyR", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(62, "KEYS", "AirbusFBW/MCDU1KeyS", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(63, "KEYT", "AirbusFBW/MCDU1KeyT", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(64, "KEYU", "AirbusFBW/MCDU1KeyU", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(65, "KEYV", "AirbusFBW/MCDU1KeyV", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(66, "KEYW", "AirbusFBW/MCDU1KeyW", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(67, "KEYX", "AirbusFBW/MCDU1KeyX", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(68, "KEYY", "AirbusFBW/MCDU1KeyY", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(69, "KEYZ", "AirbusFBW/MCDU1KeyZ", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(70, "SLASH", "AirbusFBW/MCDU1KeySlash", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(71, "SPACE", "AirbusFBW/MCDU1KeySpace", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(72, "OVERFLY", "AirbusFBW/MCDU1KeyOverfly", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(73, "Clear", "AirbusFBW/MCDU1KeyClear", DrefType.CMD, ButtonType.TOGGLE))
 
 
 def RequestDataRefs(xp):
     dataref_cnt = 0
     for idx,b in enumerate(buttonlist):
         datacache[b.dataref] = None
-        if b.dreftype != DREF_TYPE.CMD and b.led != None:
+        if b.dreftype != DrefType.CMD and b.led != None:
             print(f"register dataref {b.dataref}")
             xp.AddDataRef(b.dataref, 3)
             dataref_cnt += 1
@@ -478,44 +478,44 @@ def mcdu_button_event():
         if buttons_press_event[b.id]:
             buttons_press_event[b.id] = 0
             #print(f'button {b.label} pressed')
-            if b.type == BUTTON.TOGGLE:
+            if b.type == ButtonType.TOGGLE:
                 val = datacache[b.dataref]
-                if b.dreftype== DREF_TYPE.DATA:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} from {bool(val)} to {not bool(val)}')
                     xp.WriteDataRef(b.dataref, not bool(val))
-                elif b.dreftype== DREF_TYPE.CMD:
+                elif b.dreftype== DrefType.CMD:
                     print(f'send command {b.dataref}')
                     xp.SendCommand(b.dataref)
-            elif b.type == BUTTON.SWITCH:
+            elif b.type == ButtonType.SWITCH:
                 val = datacache[b.dataref]
-                if b.dreftype== DREF_TYPE.DATA:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 1')
                     xp.WriteDataRef(b.dataref, 1)
-                elif b.dreftype== DREF_TYPE.CMD:
+                elif b.dreftype== DrefType.CMD:
                     print(f'send command {b.dataref}')
                     xp.SendCommand(b.dataref)
-            elif b.type == BUTTON.SEND_0:
-                if b.dreftype== DREF_TYPE.DATA:
+            elif b.type == ButtonType.SEND_0:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 0')
                     xp.WriteDataRef(b.dataref, 0)
-            elif b.type == BUTTON.SEND_1:
-                if b.dreftype== DREF_TYPE.DATA:
+            elif b.type == ButtonType.SEND_1:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 1')
                     xp.WriteDataRef(b.dataref, 1)
-            elif b.type == BUTTON.SEND_2:
-                if b.dreftype== DREF_TYPE.DATA:
+            elif b.type == ButtonType.SEND_2:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 2')
                     xp.WriteDataRef(b.dataref, 2)
-            elif b.type == BUTTON.SEND_3:
-                if b.dreftype== DREF_TYPE.DATA:
+            elif b.type == ButtonType.SEND_3:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 3')
                     xp.WriteDataRef(b.dataref, 3)
-            elif b.type == BUTTON.SEND_4:
-                if b.dreftype== DREF_TYPE.DATA:
+            elif b.type == ButtonType.SEND_4:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 4')
                     xp.WriteDataRef(b.dataref, 4)
-            elif b.type == BUTTON.SEND_5:
-                if b.dreftype== DREF_TYPE.DATA:
+            elif b.type == ButtonType.SEND_5:
+                if b.dreftype== DrefType.DATA:
                     print(f'set dataref {b.dataref} to 5')
                     xp.WriteDataRef(b.dataref, 5)
             else:
@@ -523,7 +523,7 @@ def mcdu_button_event():
         if buttons_release_event[b.id]:
             buttons_release_event[b.id] = 0
             print(f'button {b.label} released')
-            if b.type == BUTTON.SWITCH:
+            if b.type == ButtonType.SWITCH:
                 xp.WriteDataRef(b.dataref, 0)
 
 
