@@ -540,9 +540,11 @@ def mcdu_create_events(usb_mgr, display_mgr):
                 print(f'rx data count {len(data_in)} not valid')
                 continue
             #print(f"data_in: {data_in}")
-            buttons = data_in[1] | (data_in[2] << 8) | (data_in[3] << 16) | (data_in[4] << 24)
-            buttons |= (data_in[8] << 56) | (data_in[9] << 64 ) | (data_in[10] << 72) | (data_in[11] << 80)
-            buttons |= (data_in[5] << 32) | (data_in[6] << 40 ) | (data_in[7] << 48)# | (data_in[12] << 56)
+
+            #create button bit-pattern
+            buttons = 0
+            for i in range(12):
+                buttons |= data_in[i + 1] << (8 * i)
             #print(hex(buttons))
             for i in range (BUTTONS_CNT):
                 mask = 0x01 << i
