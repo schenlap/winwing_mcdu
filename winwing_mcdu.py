@@ -404,10 +404,10 @@ def create_button_list_mcdu():
     #18 BRT
     buttonlist.append(Button(19, "FPLN", "AirbusFBW/MCDU1Fpln", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(20, "RADNAV", "AirbusFBW/MCDU1RadNav", DrefType.CMD, ButtonType.TOGGLE))
-    #buttonlist.append(Button(21, "FUEL", "AirbusFBW/MCDU1", DrefType.CMD, ButtonType.TOGGLE))
-    #buttonlist.append(Button(22, "SEC-FPLN", "AirbusFBW/MCDU1", DrefType.CMD, ButtonType.TOGGLE))
-    #23 ATC-COMM
-    #24 MCDU MENU
+    buttonlist.append(Button(21, "FUEL", "AirbusFBW/MCDU1FuelPred", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(22, "SEC-FPLN", "AirbusFBW/MCDU1SecFpln", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(23, "ATC", "AirbusFBW/MCDU1ATC", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(24, "MENU", "AirbusFBW/MCDU1Menu", DrefType.CMD, ButtonType.TOGGLE))
     #25 DIM
     buttonlist.append(Button(26, "AIRPORT", "AirbusFBW/MCDU1Airport", DrefType.CMD, ButtonType.TOGGLE))
     #27 empty
