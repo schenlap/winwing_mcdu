@@ -170,7 +170,7 @@ class DisplayManager:
                 c = (c + 1) % len(encoded)
             self.ep_out.write(bytes(buf))
 
-    def set_from_page(self, page):
+    def set_from_page(self, page, vertslew_key):
         buf = []
         for i in range(PAGE_LINES):
             for j in range(PAGE_CHARS_PER_LINE):
@@ -197,7 +197,14 @@ class DisplayManager:
                 #elif val == "ö": # up arrow
                 #    buf.extend([0xe2, 0x86, 0x91])
                 else:
-                    buf.append(val)
+                    if i == PAGE_LINES - 1 and j == PAGE_CHARS_PER_LINE - 2:
+                        print(f"vsk: {vertslew_key}")
+                    if i == PAGE_LINES - 1 and j == PAGE_CHARS_PER_LINE - 2 and (vertslew_key == 1 or vertslew_key == 2):
+                        buf.extend([0xe2, 0x86, 0x91])
+                    elif i == PAGE_LINES - 1 and j == PAGE_CHARS_PER_LINE - 1 and (vertslew_key == 1 or vertslew_key == 3):
+                        buf.extend([0xe2, 0x86, 0x93])
+                    else:
+                        buf.append(val)
 
         while len(buf):
             max_len = min(63, len(buf))
@@ -669,7 +676,7 @@ def set_datacache(usb_mgr, display_mgr, values):
                 color = chr(ord(color) - 32) # convert y in Y, a in A, ... if not small font
             if color == None:
                 color = 'm' # symbol
-        if "MCDU1VertSlewKeys" in v:
+        if "VertSlewKeys" in v:
             vertslew_key = val # 1: up/down, 2: up, 3: down
 
         pos = pos * PAGE_BYTES_PER_CHAR # we decode color and font (2 bytes) and char(1 byte) = sum 3 bytes per char
@@ -683,9 +690,9 @@ def set_datacache(usb_mgr, display_mgr, values):
                 newline[pos + PAGE_BYTES_PER_CHAR - 1] = chr(val)
                 page_tmp[line] = newline
 
-                # reset vertslew_keys to not trigger an continous redraw
-                page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
-                page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
+                # reset vertslew_key to not trigger an continous redraw
+                #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
+                #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
 
                 if page[line][pos + PAGE_BYTES_PER_CHAR - 1] != newline[pos + PAGE_BYTES_PER_CHAR - 1]:
                     new = True
@@ -756,7 +763,7 @@ def set_datacache(usb_mgr, display_mgr, values):
             #    exped_led_state_desired = datacache['AirbusFBW/APVerticalMode'] >= 112
             #except:
             #    exped_led_state_desired = False
-            display_mgr.set_from_page(page_tmp)
+            display_mgr.set_from_page(page_tmp, vertslew_key)
         sleep(0.05)
 
         # TODO EFISL
