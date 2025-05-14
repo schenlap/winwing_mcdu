@@ -206,8 +206,6 @@ class DisplayManager:
             if max_len < 63:
                 usb_buf.extend([0] * (63 - max_len))
             self.ep_out.write(bytes(usb_buf))
-            print(len(usb_buf))
-            print(usb_buf)
             del buf[:max_len]
 
     def write_test(self):
@@ -602,9 +600,7 @@ page = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINE
 
 def set_datacache(usb_mgr, display_mgr, values):
     #global datacache
-    #global exped_led_state
     global page
-    #print(f'###')
     new = False
     spw_line_ended = False
     vertslew_key = None
@@ -620,8 +616,6 @@ def set_datacache(usb_mgr, display_mgr, values):
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0x20 or (val == 0 and not 'MCDU1spw' in v):
             continue
-        #if val == '`':
-        #    val = '°'
         if color == 's':
             if chr(val) == 'A':
                 val = 91 # '[', should be blue
