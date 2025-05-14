@@ -675,7 +675,7 @@ def set_datacache(usb_mgr, display_mgr, values):
         pos = pos * PAGE_BYTES_PER_CHAR # we decode color and font (2 bytes) and char(1 byte) = sum 3 bytes per char
 
         if data_valid: # we received mcdu data
-            if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
+            #if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
                 newline = page_tmp[line]
                 newline[pos] = str(color)
                 if PAGE_BYTES_PER_CHAR == 3:
@@ -689,8 +689,8 @@ def set_datacache(usb_mgr, display_mgr, values):
 
                 if page[line][pos + PAGE_BYTES_PER_CHAR - 1] != newline[pos + PAGE_BYTES_PER_CHAR - 1]:
                     new = True
-            else:
-                print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
+            #else:
+            #    print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
     if new:
         page = page_tmp.copy()
         up = ' '
