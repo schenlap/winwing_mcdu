@@ -611,7 +611,7 @@ def set_datacache(usb_mgr, display_mgr, values):
         data_valid = False
         color = v.split('[')[0][-1]
         font_small = 1 # 0 .. normal, 1 .. small
-        if 'cont' in v or 'spw' in v:
+        if ('cont' in v and not 'scont' in v) or 'spw' in v:
             font_small = 0 # normal
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0x20 or (val == 0 and not 'MCDU1spw' in v):
