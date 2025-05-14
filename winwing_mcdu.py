@@ -197,8 +197,6 @@ class DisplayManager:
                 #elif val == "ö": # up arrow
                 #    buf.extend([0xe2, 0x86, 0x91])
                 else:
-                    if i == PAGE_LINES - 1 and j == PAGE_CHARS_PER_LINE - 2:
-                        print(f"vsk: {vertslew_key}")
                     if i == PAGE_LINES - 1 and j == PAGE_CHARS_PER_LINE - 2 and (vertslew_key == 1 or vertslew_key == 2):
                         buf.extend([0xe2, 0x86, 0x91])
                     elif i == PAGE_LINES - 1 and j == PAGE_CHARS_PER_LINE - 1 and (vertslew_key == 1 or vertslew_key == 3):
@@ -574,6 +572,8 @@ def mcdu_create_events(usb_mgr, display_mgr):
             except Exception as error:
                 # print(f' *** continue after usb-in error: {error} ***') # TODO
                 sleep(0.5) # TODO remove
+                continue
+            if len(data_in) == 14: # we get this often but don't understand yet. May have someting to do with leds set
                 continue
             if len(data_in) != 25:
                 print(f'rx data count {len(data_in)} not valid')
