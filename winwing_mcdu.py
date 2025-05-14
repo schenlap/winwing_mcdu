@@ -170,22 +170,44 @@ class DisplayManager:
             self.ep_out.write(bytes(buf))
 
     def set_from_page(self, page):
-        buf = [0xf2]
+        buf = []
         for i in range(PAGE_LINES):
             for j in range(PAGE_CHARS_PER_LINE):
                 color = page[i][j * PAGE_BYTES_PER_CHAR]
                 font_small = page[i][j * PAGE_BYTES_PER_CHAR + 1]
-                col_winwing = ww_col_map.get(color.upper())
+                col_winwing = self.col_map.get(color.upper())
                 if col_winwing == None:
                     col_winwing = 0x0042
                 if font_small == 1:
                     col_winwing = col_winwing + 0x016b
                 buf.append(col_winwing & 0x0ff)
                 buf.append((col_winwing >> 8) & 0xff)
-                buf.append(ord(page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]))
-                if len(buf) >= 64:
-                    self.ep_out.write(bytes(buf))
-                    buf = [0xf2]
+                val = ord(page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1])
+                if val == 35: # #
+                    buf.extend([0xe2, 0x98, 0x90])
+                elif val == 60: # <
+                    buf.extend([0xe2, 0x86, 0x90])
+                elif val == 62: # >
+                    buf.extend([0xe2, 0x86, 0x92])
+                elif val == 96: # °
+                    buf.extend([0xc2, 0xb0])
+                #elif val == "A": # down arrow
+                #    buf.extend([0xe2, 0x86, 0x93])
+                #elif val == "ö": # up arrow
+                #    buf.extend([0xe2, 0x86, 0x91])
+                else:
+                    buf.append(val)
+
+        while len(buf):
+            max_len = min(63, len(buf))
+            usb_buf = buf[:max_len]
+            usb_buf.insert(0, 0xf2)
+            if max_len < 63:
+                usb_buf.extend([0] * (63 - max_len))
+            self.ep_out.write(bytes(usb_buf))
+            print(len(usb_buf))
+            print(usb_buf)
+            del buf[:max_len]
 
     def write_test(self):
         c = 80
