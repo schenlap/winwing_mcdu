@@ -465,6 +465,7 @@ def create_button_list_mcdu():
     buttonlist.append(Button(72, "OVERFLY", "AirbusFBW/MCDU1KeyOverfly", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(73, "Clear", "AirbusFBW/MCDU1KeyClear", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(75, "LCDBright", "AirbusFBW/DUBrightness[6]", DrefType.DATA, ButtonType.NONE, Leds.SCREEN_BACKLIGHT))
+    buttonlist.append(Button(75, "Backlight", "ckpt/fped/lights/mainPedLeft/anim", DrefType.DATA, ButtonType.NONE, Leds.BACKLIGHT))
 
 
 def RequestDataRefs(xp):
@@ -607,10 +608,6 @@ def set_button_led_lcd(ep, dataref, v):
             print(f'led: {b.led}, value: {v}')
 
             winwing_mcdu_set_leds(ep, b.led, int(v))
-            if b.led == Leds.BACKLIGHT:
-                winwing_mcdu_set_led(mcdu_out_endpoint, Leds.EXPED_YELLOW, int(v))
-                print(f'set led brigthness: {b.led}, value: {v}')
-                led_brightness = v
             break
 
 page = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINES)]
@@ -630,9 +627,12 @@ def set_datacache(usb_mgr, display_mgr, values):
         if "DUBrightness" in v and values[v] <= 1:
             # brightness is in 0..1, we need 0..255
             values[v] = int(values[v] * 255)
+        if "/anim" in v and values[v] > 255:
+            # brightness is in 0..270, we need 0..255
+            values[v] = 255
 
         #write leds ob buttons (also NONE Buttons)
-        if "DUBrightness" in v:
+        if "DUBrightness" in v or "/anim" in v:
             if datacache[v] != int(values[v]):
                 print(f'cache: v:{v} val:{int(values[v])}')
                 datacache[v] = int(values[v])
