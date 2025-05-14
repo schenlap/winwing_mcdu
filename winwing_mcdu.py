@@ -118,20 +118,21 @@ def winwing_mcdu_set_led(ep, led, brightness):
       cmd = bytes(data)
       ep.write(cmd)
 
-ww_col_map = {
-        'L' : 0x0000, # black with grey background
-        'A' : 0x0021, # amber
-        'W' : 0x0042, # white
-        'B' : 0x0063, # cyan
-        'G' : 0x0084, # green
-        'M' : 0x00A5, # magenta
-        'R' : 0x00C6, # red
-        'Y' : 0x00E7, # yellow
-        'E' : 0x0108  # grey
-}
 
 
 class DisplayManager:
+    col_map = {
+            'L' : 0x0000, # black with grey background
+            'A' : 0x0021, # amber
+            'W' : 0x0042, # white
+            'B' : 0x0063, # cyan
+            'G' : 0x0084, # green
+            'M' : 0x00A5, # magenta
+            'R' : 0x00C6, # red
+            'Y' : 0x00E7, # yellow
+            'E' : 0x0108  # grey
+    }
+
     def __init__(self, ep_out):
         self.ep_out = ep_out
         self.page = [[' ' for _ in range(PAGE_BYTES_PER_LINE)] for _ in range(PAGE_LINES)]
