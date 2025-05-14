@@ -570,7 +570,7 @@ def mcdu_create_events(usb_mgr, display_mgr):
             for i in range (BUTTONS_CNT):
                 mask = 0x01 << i
                 if xor_bitmask(buttons, buttons_last, mask):
-                    print(f"buttons: {format(buttons, "#04x"):^14}")
+                    #print(f"buttons: {format(buttons, "#04x"):^14}")
                     if buttons & mask:
                         buttons_press_event[i] = 1
                     else:
@@ -876,8 +876,8 @@ def main():
     print('compatible with X-Plane 11/12 and all Toliss Airbus')
 
     display_mgr = DisplayManager(usb_mgr.ep_out)
-    display_mgr.clear()
-    display_mgr.write_line_repeated('www.github.com/schenlap ', 16)
+    #display_mgr.clear() # triggers pipe error on mac
+    #display_mgr.write_line_repeated('www.github.com/schenlap ', 16)
 
     create_button_list_mcdu()
 
