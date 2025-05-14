@@ -687,6 +687,9 @@ def set_datacache(usb_mgr, display_mgr, values):
         if "MCDU1spw" in v: # and color == 'w':
             line = 13
             pos = int(v.split('[')[1].split(']')[0])
+            if pos == 0:
+                spw_line_ended = False # not clear why this is necessary becaus it should be False anyway
+            #print(f"spw: pos:{pos},val:{val},line:{page_tmp[line][2::3]},end={spw_line_ended}")
             if val == 0:
                 spw_line_ended = True
             if spw_line_ended:
