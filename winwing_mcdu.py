@@ -101,8 +101,8 @@ class Flag:
     value : bool = False
 
 
-flags = dict([("spd", Flag('spd-mach_spd', Byte.H0, 0x01)),
-              ])
+#flags = dict([("spd", Flag('spd-mach_spd', Byte.H0, 0x01)),
+#              ])
 
 
 def winwing_mcdu_set_leds(ep, leds, brightness):
@@ -113,7 +113,7 @@ def winwing_mcdu_set_leds(ep, leds, brightness):
         winwing_mcdu_set_led(ep, leds, brightness)
 
 def winwing_mcdu_set_led(ep, led, brightness):
-    data = [0x02, 0x10, 0xbb, 0, 0, 3, 0x49, led.value, brightness, 0,0,0,0,0]
+    data = [0x02, 0x32, 0xbb, 0, 0, 3, 0x49, led.value, brightness, 0,0,0,0,0]
     if 'data' in locals():
       cmd = bytes(data)
       ep.write(cmd)
@@ -374,10 +374,12 @@ array_datarefs = [
     ("AirbusFBW/MCDU1scont4y", None),
     #("AirbusFBW/MCDU1scont5y", None),
     #("AirbusFBW/MCDU1scont6y", None),
-    ("AirbusFBW/MCDU1spw", 4), # textbox
-    ("AirbusFBW/MCDU1VertSlewKeys", None) # TODO not an array
+    ("AirbusFBW/MCDU1spw", 4) # textbox
   ]
 
+datarefs = [
+    ("AirbusFBW/MCDU1VertSlewKeys", None)
+  ]
 
 buttons_press_event = [0] * BUTTONS_CNT
 buttons_release_event = [0] * BUTTONS_CNT
@@ -406,14 +408,14 @@ def create_button_list_mcdu():
     buttonlist.append(Button(15, "INIT", "AirbusFBW/MCDU1Init", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(16, "DATA", "AirbusFBW/MCDU1Data", DrefType.CMD, ButtonType.TOGGLE))
     #17 empty
-    #18 BRT
+    buttonlist.append(Button(18, "BRT", "AirbusFBW/MCDU1KeyBright", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(19, "FPLN", "AirbusFBW/MCDU1Fpln", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(20, "RADNAV", "AirbusFBW/MCDU1RadNav", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(21, "FUEL", "AirbusFBW/MCDU1FuelPred", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(22, "SEC-FPLN", "AirbusFBW/MCDU1SecFpln", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(23, "ATC", "AirbusFBW/MCDU1ATC", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(24, "MENU", "AirbusFBW/MCDU1Menu", DrefType.CMD, ButtonType.TOGGLE))
-    #25 DIM
+    buttonlist.append(Button(25, "DIM", "AirbusFBW/MCDU1KeyDim", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(26, "AIRPORT", "AirbusFBW/MCDU1Airport", DrefType.CMD, ButtonType.TOGGLE))
     #27 empty
     buttonlist.append(Button(28, "SLEW_LEFT", "AirbusFBW/MCDU1SlewLeft", DrefType.CMD, ButtonType.TOGGLE))
@@ -462,6 +464,7 @@ def create_button_list_mcdu():
     buttonlist.append(Button(71, "SPACE", "AirbusFBW/MCDU1KeySpace", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(72, "OVERFLY", "AirbusFBW/MCDU1KeyOverfly", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(73, "Clear", "AirbusFBW/MCDU1KeyClear", DrefType.CMD, ButtonType.TOGGLE))
+    buttonlist.append(Button(75, "LCDBright", "AirbusFBW/DUBrightness[6]", DrefType.DATA, ButtonType.NONE, Leds.SCREEN_BACKLIGHT))
 
 
 def RequestDataRefs(xp):
@@ -480,6 +483,13 @@ def RequestDataRefs(xp):
                 freq = 2
             xp.AddDataRef(d[0]+'['+str(i)+']', freq)
             dataref_cnt += 1
+    for d in datarefs:
+        print(f"register dataref {d[0]}")
+        freq = d[1]
+        if freq == None:
+            freq = 2
+        xp.AddDataRef(d[0], freq)
+        dataref_cnt += 1
     print(f"registered {dataref_cnt} datarefs")
 
 
@@ -555,7 +565,7 @@ def mcdu_create_events(usb_mgr, display_mgr):
                 sleep(1)
                 continue
 
-            set_datacache(usb_mgr, display_mgr, values)
+            set_datacache(usb_mgr, display_mgr, values.copy())
             values_processed.set()
             sleep(0.005)
             try:
@@ -586,7 +596,7 @@ def mcdu_create_events(usb_mgr, display_mgr):
             buttons_last = buttons
 
 
-def set_button_led_lcd(dataref, v):
+def set_button_led_lcd(ep, dataref, v):
     global led_brightness
     for b in buttonlist:
         if b.dataref == dataref:
@@ -596,7 +606,7 @@ def set_button_led_lcd(dataref, v):
                 v = 255
             print(f'led: {b.led}, value: {v}')
 
-            winwing_mcdu_set_leds(mcdu_out_endpoint, b.led, int(v))
+            winwing_mcdu_set_leds(ep, b.led, int(v))
             if b.led == Leds.BACKLIGHT:
                 winwing_mcdu_set_led(mcdu_out_endpoint, Leds.EXPED_YELLOW, int(v))
                 print(f'set led brigthness: {b.led}, value: {v}')
@@ -606,7 +616,7 @@ def set_button_led_lcd(dataref, v):
 page = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINES)]
 
 def set_datacache(usb_mgr, display_mgr, values):
-    #global datacache
+    global datacache
     global page
     new = False
     spw_line_ended = False
@@ -616,6 +626,19 @@ def set_datacache(usb_mgr, display_mgr, values):
         pos = 0
         val = int(values[v])
         data_valid = False
+
+        if "DUBrightness" in v and values[v] <= 1:
+            # brightness is in 0..1, we need 0..255
+            values[v] = int(values[v] * 255)
+
+        #write leds ob buttons (also NONE Buttons)
+        if "DUBrightness" in v:
+            if datacache[v] != int(values[v]):
+                print(f'cache: v:{v} val:{int(values[v])}')
+                datacache[v] = int(values[v])
+                set_button_led_lcd(usb_mgr.ep_out, v, int(values[v]))
+
+
         color = v.split('[')[0][-1]
         font_small = 1 # 0 .. normal, 1 .. small
         if ('cont' in v and not 'scont' in v) or 'spw' in v:
@@ -698,6 +721,8 @@ def set_datacache(usb_mgr, display_mgr, values):
                     new = True
             #else:
             #    print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
+
+    #display MCDU in Console
     if new:
         page = page_tmp.copy()
         up = ' '
@@ -746,16 +771,7 @@ def set_datacache(usb_mgr, display_mgr, values):
         print("")
 
 
-        #if values[v] != 0:
-        #    print(f'cache: v:{v} val:{int(values[v])}')
-        #if v == 'AirbusFBW/SupplLightLevelRehostats[0]' and values[v] <= 1:
-            # brightness is in 0..1, we need 0..255
-        #    values[v] = int(values[v] * 255)
-        #if datacache[v] != int(values[v]):
-        #    new = True
-            #print(f'cache: v:{v} val:{int(values[v])}')
-        #    datacache[v] = int(values[v])
-        #    set_button_led_lcd(v, int(values[v]))
+    #display mcdu on winwing
     if new == True or usb_retry == True:
 
         if True:
@@ -888,16 +904,8 @@ def main():
 
     create_button_list_mcdu()
 
-    leds = [Leds.SCREEN_BACKLIGHT]
-    #if device_config & DEVICEMASK.EFISR:
-    #  leds.append(Leds.EFISR_BACKLIGHT)
-    #if device_config & DEVICEMASK.EFISL:
-    #  leds.append(Leds.EFISL_BACKLIGHT)
-
-    #winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 180)
-    #winwing_mcdu_set_leds(mcdu_out_endpoint, leds, 80)
-    #winwing_mcdu_set_lcd(mcdu_out_endpoint, "   ", "   ", "Schen", " lap")
-    #TODO set EFISL
+    #leds = [Leds.SCREEN_BACKLIGHT]
+    #winwing_mcdu_set_leds(usb_mgr.ep_out, leds, 100)
 
     usb_event_thread = Thread(target=mcdu_create_events, args=[usb_mgr, display_mgr])
     usb_event_thread.start()
