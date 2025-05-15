@@ -414,7 +414,7 @@ def create_button_list_mcdu():
     buttonlist.append(Button(24, "MENU", "AirbusFBW/MCDU1Menu", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(25, "DIM", "AirbusFBW/MCDU1KeyDim", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(26, "AIRPORT", "AirbusFBW/MCDU1Airport", DrefType.CMD, ButtonType.TOGGLE))
-    #27 empty
+    buttonlist.append(Button(27, "PURSER", "AirbusFBW/purser/fwd", DrefType.CMD, ButtonType.TOGGLE)) #27 empty, map to CALL purser FWD
     buttonlist.append(Button(28, "SLEW_LEFT", "AirbusFBW/MCDU1SlewLeft", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(29, "SLEW_UP", "AirbusFBW/MCDU1SlewUp", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(30, "SLEW_RIGHT", "AirbusFBW/MCDU1SlewRight", DrefType.CMD, ButtonType.TOGGLE))
