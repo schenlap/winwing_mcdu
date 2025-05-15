@@ -10,7 +10,6 @@ from enum import Enum, IntEnum
 import os
 import socket
 import struct
-from termcolor import colored, cprint
 
 #for raw usb
 import re
@@ -743,7 +742,7 @@ def set_datacache(usb_mgr, display_mgr, values):
         #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = down
         print("|------ MCDU SCREEN -----|")
         for i in range(PAGE_LINES):
-            cprint('|', 'white', end='')
+            print('|', end='')
             for j in range(PAGE_CHARS_PER_LINE):
                 val = page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]
                 if val == '#':
@@ -755,20 +754,7 @@ def set_datacache(usb_mgr, display_mgr, values):
                     val = '🠊'
                 if val == '<':
                     val = '🠈'
-                cprint(val, colorname_from_char(page[i][j * PAGE_BYTES_PER_CHAR]), end='')
-            print('|')
-        print("|------- COLORS ---------|")
-        for i in range(PAGE_LINES):
-            cprint('|', 'white', end='')
-            for j in range(PAGE_CHARS_PER_LINE):
-                print(page[i][j * PAGE_BYTES_PER_CHAR], end='') # TODO font and color, not just color
-            print('|')
-        print("|------------------------|")
-        print("|-------  FONT  ---------|")
-        for i in range(PAGE_LINES):
-            cprint('|', 'white', end='')
-            for j in range(PAGE_CHARS_PER_LINE):
-                print(page[i][j * PAGE_BYTES_PER_CHAR + 1], end='') # TODO font and color, not just color
+                print(val, end='')
             print('|')
         print("|------------------------|")
         print("")
