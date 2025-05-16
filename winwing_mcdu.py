@@ -382,7 +382,8 @@ array_datarefs = [
     ("AirbusFBW/MCDU1scont4y", None),
     #("AirbusFBW/MCDU1scont5y", None),
     #("AirbusFBW/MCDU1scont6y", None),
-    ("AirbusFBW/MCDU1spw", 4) # textbox
+    ("AirbusFBW/MCDU1spw", 4), # textbox
+    ("AirbusFBW/MCDU1spa", None) # textbox
   ]
 
 datarefs = [
@@ -631,6 +632,7 @@ def set_datacache(usb_mgr, display_mgr, values):
     global page
     new = False
     spw_line_ended = False
+    spa_line_ended = False
     vertslew_key = None
     page_tmp = [[' ' for i in range(0, PAGE_BYTES_PER_LINE)] for j in range(0, PAGE_LINES)]
     for v in values:
@@ -660,7 +662,7 @@ def set_datacache(usb_mgr, display_mgr, values):
         if ('title' in v and not 'stitle' in v) or 'spa' in v:
             font_small = 0 # normal
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
-        if val == 0x20 or (val == 0 and not 'MCDU1spw' in v):
+        if val == 0x20 or (val == 0 and not 'MCDU1spw' in v and not 'MCDU1spa' in v):
             continue
         if color == 's':
             if chr(val) == 'A':
@@ -702,6 +704,7 @@ def set_datacache(usb_mgr, display_mgr, values):
             line = int(v.split('cont')[1][0]) * 2
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
+        spw_spa_data = False
         if "MCDU1spw" in v: # and color == 'w':
             line = 13
             pos = int(v.split('[')[1].split(']')[0])
@@ -712,8 +715,31 @@ def set_datacache(usb_mgr, display_mgr, values):
                 spw_line_ended = True
             if spw_line_ended:
                 val = 0x20
+            old_data = page_tmp[line][pos * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]
+            if old_data != 0x20 and old_data != ' ': # already text from spw
+                #print(f"spw: already data: {(page_tmp[line][pos])} in line:{line}, pos:{pos}")
+                continue
             data_valid = True
-        else:
+            spw_spa_data = True
+        if "MCDU1spa" in v: # and color == 'w':
+            line = 13
+            pos = int(v.split('[')[1].split(']')[0])
+            if pos > 21: # prevent amber color on vert slew keys
+                continue
+            if pos == 0:
+                spa_line_ended = False # not clear why this is necessary becaus it should be False anyway
+            #print(f"spa: pos:{pos},val:{val},line:{page_tmp[line][2::3]},end={spa_line_ended}")
+            if val == 0:
+                spa_line_ended = True
+            if spa_line_ended:
+                val = 0x20
+            old_data = page_tmp[line][pos * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1]
+            if old_data != 0x20 and old_data != ' ': # already text from spw
+                #print(f"spa: already data: {(page_tmp[line][pos])} in line:{line}, pos:{pos}")
+                continue
+            data_valid = True
+            spw_spa_data = True
+        if not spw_spa_data:
             if color == 's':
                 color = None
             if "MCDU1s" not in v and color != None:
@@ -726,7 +752,6 @@ def set_datacache(usb_mgr, display_mgr, values):
         pos = pos * PAGE_BYTES_PER_CHAR # we decode color and font (2 bytes) and char(1 byte) = sum 3 bytes per char
 
         if data_valid: # we received mcdu data
-            #if page_tmp[line][pos] == ' ' or page_tmp[line][pos] == 0: # do not overwrite text, page_tmp always start with empty text
                 newline = page_tmp[line]
                 newline[pos] = str(color)
                 if PAGE_BYTES_PER_CHAR == 3:
@@ -734,17 +759,11 @@ def set_datacache(usb_mgr, display_mgr, values):
                 newline[pos + PAGE_BYTES_PER_CHAR - 1] = chr(val)
                 page_tmp[line] = newline
 
-                # reset vertslew_key to not trigger an continous redraw
-                #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
-                #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = ' '
-
-                if page[line][pos + PAGE_BYTES_PER_CHAR - 1] != newline[pos + PAGE_BYTES_PER_CHAR - 1]:
-                    new = True
-            #else:
-            #    print(f"do not overwrite line:{line}, pos:{pos}, buf_char:{page_tmp[line][pos]} with char:{val}:'{chr(val)}'")
+    if page != page_tmp:
+        new = True
 
     #display MCDU in Console
-    if new:
+    if page != page_tmp:
         page = page_tmp.copy()
         up = ' '
         down = ' '
@@ -756,9 +775,6 @@ def set_datacache(usb_mgr, display_mgr, values):
         elif vertslew_key == 3:
             down = '🠋'
 
-        # TODO reenable vert slew keys, they make an error in usb write also we do this on a copy only
-        #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 2) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = up
-        #page[PAGE_LINES - 1][(PAGE_CHARS_PER_LINE - 1) * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = down
         print("|------ MCDU SCREEN -----|")
         for i in range(PAGE_LINES):
             print('|', end='')
@@ -789,8 +805,6 @@ def set_datacache(usb_mgr, display_mgr, values):
             #    exped_led_state_desired = False
             display_mgr.set_from_page(page_tmp, vertslew_key)
         sleep(0.05)
-
-        # TODO EFISL
 
 def colorname_from_char(c):
     c = c.lower()
