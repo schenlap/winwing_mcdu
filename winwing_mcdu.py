@@ -577,6 +577,7 @@ def mcdu_create_events(usb_mgr, display_mgr):
             set_datacache(usb_mgr, display_mgr, values.copy())
             values_processed.set()
             sleep(0.005)
+            #print('#', end='', flush=True) # TEST1: should print many '#' in console
             try:
                 data_in = usb_mgr.device.read(0x81, 25)
             except Exception as error:
@@ -594,7 +595,7 @@ def mcdu_create_events(usb_mgr, display_mgr):
             buttons = 0
             for i in range(12):
                 buttons |= data_in[i + 1] << (8 * i)
-            #print(hex(buttons))
+            #print(hex(buttons)) # TEST2: you should see a difference when pressing buttons
             for i in range (BUTTONS_CNT):
                 mask = 0x01 << i
                 if xor_bitmask(buttons, buttons_last, mask):
