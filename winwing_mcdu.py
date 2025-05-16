@@ -409,7 +409,7 @@ def create_button_list_mcdu():
     buttonlist.append(Button(14, "PERF", "AirbusFBW/MCDU1Perf", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(15, "INIT", "AirbusFBW/MCDU1Init", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(16, "DATA", "AirbusFBW/MCDU1Data", DrefType.CMD, ButtonType.TOGGLE))
-    #17 empty
+    buttonlist.append(Button(17, "EMTYR", "toliss_airbus/iscs_open", DrefType.CMD, ButtonType.TOGGLE)) # 17 emtpy, map to open ICSC screen
     buttonlist.append(Button(18, "BRT", "AirbusFBW/MCDU1KeyBright", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(19, "FPLN", "AirbusFBW/MCDU1Fpln", DrefType.CMD, ButtonType.TOGGLE))
     buttonlist.append(Button(20, "RADNAV", "AirbusFBW/MCDU1RadNav", DrefType.CMD, ButtonType.TOGGLE))
