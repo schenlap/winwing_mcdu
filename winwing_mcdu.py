@@ -292,6 +292,12 @@ array_datarefs = [
     #("AirbusFBW/MCDU1label4y", None),
     #("AirbusFBW/MCDU1label5y", None),
     ("AirbusFBW/MCDU1label6y", None),
+    ("AirbusFBW/MCDU1label1Lg", None),
+    ("AirbusFBW/MCDU1label2Lg", None),
+    ("AirbusFBW/MCDU1label3Lg", None),
+    ("AirbusFBW/MCDU1label4Lg", None),
+    ("AirbusFBW/MCDU1label5Lg", None),
+    ("AirbusFBW/MCDU1label6Lg", None),
     ("AirbusFBW/MCDU1cont1b", None),
     ("AirbusFBW/MCDU1cont2b", None),
     ("AirbusFBW/MCDU1cont3b", None),
@@ -651,6 +657,8 @@ def set_datacache(usb_mgr, display_mgr, values):
         font_small = 1 # 0 .. normal, 1 .. small
         if ('cont' in v and not 'scont' in v) or 'spw' in v:
             font_small = 0 # normal
+        if ('title' in v and not 'stitle' in v) or 'spa' in v:
+            font_small = 0 # normal
         #print(f"page: v:{v} val:{val},'{chr(val)}', col:{color}")
         if val == 0x20 or (val == 0 and not 'MCDU1spw' in v):
             continue
@@ -688,6 +696,8 @@ def set_datacache(usb_mgr, display_mgr, values):
             line = int(v.split('label')[1][0]) * 2 - 1
             pos = int(v.split('[')[1].split(']')[0])
             data_valid = True
+            if v.split('[')[0][-2] == 'L':
+                font_small = 0 # normal
         if "MCDU1cont" in v or "MCDU1scont" in v: # and color == 'w':
             line = int(v.split('cont')[1][0]) * 2
             pos = int(v.split('[')[1].split(']')[0])
