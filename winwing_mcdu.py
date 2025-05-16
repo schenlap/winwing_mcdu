@@ -862,8 +862,7 @@ class UsbManager:
 
     def find_device(self):
         device_config = 0
-        devlist = [{'vid':0x4098, 'pid':0xbb10, 'name':'MCDU', 'mask':DEVICEMASK.MCDU},
-                   {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Captain', 'mask':DEVICEMASK.MCDU | DEVICEMASK.CAP},
+        devlist = [{'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Captain', 'mask':DEVICEMASK.MCDU | DEVICEMASK.CAP},
                    {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - First Offizer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.FO},
                    {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Observer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.OBS},
                    {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not tested)', 'mask':DEVICEMASK.PFP3N},
