@@ -118,7 +118,6 @@ def winwing_mcdu_set_led(ep, led, brightness):
       ep.write(cmd)
 
 
-
 class DisplayManager:
     col_map = {
             'L' : 0x0000, # black with grey background
@@ -473,14 +472,18 @@ def RequestDataRefs(xp):
             print(f"register dataref {b.dataref}")
             xp.AddDataRef(b.dataref, 3)
             dataref_cnt += 1
+    print(f"register array datarefs ", end='' )
     for d in array_datarefs:
-        print(f"register dataref {d[0]}[0..{PAGE_CHARS_PER_LINE-1}]")
         for i in range(PAGE_CHARS_PER_LINE):
             freq = d[1]
             if freq == None:
                 freq = 2
             xp.AddDataRef(d[0]+'['+str(i)+']', freq)
             dataref_cnt += 1
+            if dataref_cnt % 100 == 0:
+                print(".", end='', flush=True)
+
+    print("")
     for d in datarefs:
         print(f"register dataref {d[0]}")
         freq = d[1]
