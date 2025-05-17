@@ -140,7 +140,8 @@ class DisplayManager:
             'M' : 0x00A5, # magenta
             'R' : 0x00C6, # red
             'Y' : 0x00E7, # yellow
-            'E' : 0x0108  # grey
+            'E' : 0x0108, # grey
+            ' ' : 0x0042  # use white
     }
 
     def __init__(self, device):
@@ -164,11 +165,32 @@ class DisplayManager:
         device.write(bytes([0xf0, 0x0, 0x10, 0x38, 0x1b, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x32, 0xbb, 0x0, 0x0, 0x19, 0x1, 0x0, 0x0, 0x76, 0x72, 0x19, 0x0, 0x0, 0xe, 0x0, 0x0, 0x0, 0x4, 0x0, 0x2, 0x0, 0x0, 0x0, 0x1c, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x32, 0xbb, 0x0, 0x0, 0x1a, 0x1, 0x0, 0x0, 0x76, 0x72, 0x19, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]))
         device.write(bytes([0xf0, 0x0, 0x11, 0x12, 0x2, 0x32, 0xbb, 0x0, 0x0, 0x1c, 0x1, 0x0, 0x0, 0x76, 0x72, 0x19, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]))
 
+    def startupscreen(self):
+        self.clear()
+        self.write_line_to_page(0, 3,  'MCDU for X-Plane', 'W')
+        self.write_line_to_page(1, 3,  'for TOLISS Airbus', 'W')
+        self.write_line_to_page(12, 0, 'www.github.com/schenlap', 'W', True)
+        self.write_line_to_page(13, 0, 'winwing_mcdu', 'W', True)
+        self.write_line_to_page(8, 1, 'wait for X-Plane ', 'G')
+        self.set_from_page()
+
+    def _data_from_col_font(self, color: str, font_small: bool = False):
+        if type(color) == int:
+            color = chr(color)
+        if color.upper() not in self.col_map:
+            raise ValueError(f"Invalid color '{color}'")
+        if font_small:
+            color = self.col_map[color.upper()] + 0x016b
+        else:
+            color = self.col_map[color.upper()]
+        data_low = color & 0x0ff
+        data_high = (color >> 8) & 0xff
+        return (data_low, data_high)
+
     def clear(self):
         blank_line = [0xf2] + [0x42, 0x00, ord(' ')] * PAGE_CHARS_PER_LINE
         for _ in range(16):
             self.device.write(bytes(blank_line))
-        print("LCD cleared")
 
     def write_line_repeated(self, text: str, repeat: int = 16):
         encoded = [ord(c) for c in text]
@@ -180,19 +202,17 @@ class DisplayManager:
                 c = (c + 1) % len(encoded)
             self.device.write(bytes(buf))
 
-    def set_from_page(self, page, vertslew_key):
+    def set_from_page(self, page = None, vertslew_key = 0):
+        if page == None: # use internal page
+            page = self.page
         buf = []
         for i in range(PAGE_LINES):
             for j in range(PAGE_CHARS_PER_LINE):
                 color = page[i][j * PAGE_BYTES_PER_CHAR]
                 font_small = page[i][j * PAGE_BYTES_PER_CHAR + 1]
-                col_winwing = self.col_map.get(color.upper())
-                if col_winwing == None:
-                    col_winwing = 0x0042
-                if font_small == 1:
-                    col_winwing = col_winwing + 0x016b
-                buf.append(col_winwing & 0x0ff)
-                buf.append((col_winwing >> 8) & 0xff)
+                data_low, data_high = self._data_from_col_font(color, font_small)
+                buf.append(data_low)
+                buf.append(data_high)
                 val = ord(page[i][j * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1])
                 if val == 35: # #
                     buf.extend([0xe2, 0x98, 0x90])
@@ -223,41 +243,22 @@ class DisplayManager:
             self.device.write(bytes(usb_buf))
             del buf[:max_len]
 
-    def write_test(self):
-        c = 80
-        for j in range(16):
-            buf = [0xf2]
-            for i in range(3):
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(c)
+    def write_line_to_page(self, line, pos, text: str, color: str = 'W', font_small: bool = False):
+        if line < 0 or line >= PAGE_LINES:
+            raise ValueError("Line number out of range")
+        if pos < 0 or pos + len(text) >= PAGE_CHARS_PER_LINE:
+            raise ValueError("Position number out of range")
+        if len(text) > PAGE_CHARS_PER_LINE:
+            raise ValueError("Text too long for line")
 
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(ord(':'))
-
-                s = '{0:03}'.format(c)
-                print(f"c: {c}, s: {s}")
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(ord(str(s[0])))
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(ord(str(s[1])))
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(ord(str(s[2])))
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(ord(' '))
-                buf.append(0x42)
-                buf.append(0x0)
-                buf.append(ord(' '))
-                c = c + 1
-                if c == 255:
-                    c = 1
-            self.device.write(bytes(buf))
-
+        #data_low, data_high = self._data_from_col_font(color, font_small)
+        pos = pos * PAGE_BYTES_PER_CHAR
+        c = 0
+        buf = []
+        for c in range(len(text)):
+            self.page[line][pos + c * PAGE_BYTES_PER_CHAR] = color
+            self.page[line][pos + c * PAGE_BYTES_PER_CHAR + 1] = font_small
+            self.page[line][pos + c * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = text[c]
 
 mcdu_device = None # usb /dev/inputx device
 
@@ -900,11 +901,9 @@ def main():
     print('compatible with X-Plane 11/12 and all Toliss Airbus')
 
     display_mgr = DisplayManager(usb_mgr.device)
-    #display_mgr.clear() # triggers pipe error on mac
-    #display_mgr.write_line_repeated('www.github.com/schenlap ', 16)
+    display_mgr.startupscreen()
 
     create_button_list_mcdu()
-
 
     usb_event_thread = Thread(target=mcdu_create_events, args=[usb_mgr, display_mgr])
     usb_event_thread.start()
@@ -917,20 +916,25 @@ def main():
     xp.BeaconData["Port"] = UDP_PORT
     xp.UDP_PORT = xp.BeaconData["Port"]
     print(f'wait for X-Plane to connect on port {xp.BeaconData["Port"]}')
+    winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 1)
 
     while True:
         if not xplane_connected:
             try:
                 xp.AddDataRef("sim/aircraft/view/acf_tailnum")
                 values = xp.GetValues()
-                xplane_connected = True
+
                 print(f"X-Plane connected")
+                display_mgr.write_line_to_page(8, 1, 'register datarefs', 'G')
+                display_mgr.set_from_page()
                 RequestDataRefs(xp)
                 xp.AddDataRef("sim/aircraft/view/acf_tailnum", 0)
+                winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 0)
+                xplane_connected = True
             except XPlaneUdp.XPlaneTimeout:
+                winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 1)
                 xplane_connected = False
-                sleep(2)
-                print(f"wait for X-Plane")
+                sleep(1)
             continue
 
         try:
@@ -940,7 +944,9 @@ def main():
             #values will be handled in mcdu_create_events to write to usb only in one thread.
             # see function set_datacache(values)
         except XPlaneUdp.XPlaneTimeout:
-            print(f'X-Plane timeout, could not connect on port {xp.BeaconData["Port"]}')
+            print(f'X-Plane timeout, could not connect on port {xp.BeaconData["Port"]}, wait for X-Plane')
+            winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 1)
+            display_mgr.startupscreen()
             xplane_connected = False
             sleep(2)
 
