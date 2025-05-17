@@ -116,18 +116,18 @@ class Flag:
 #              ])
 
 
-def winwing_mcdu_set_leds(ep, leds, brightness):
+def winwing_mcdu_set_leds(device, leds, brightness):
     if isinstance(leds, list):
         for i in range(len(leds)):
-            winwing_mcdu_set_led(ep, leds[i], brightness)
+            winwing_mcdu_set_led(device, leds[i], brightness)
     else:
-        winwing_mcdu_set_led(ep, leds, brightness)
+        winwing_mcdu_set_led(device, leds, brightness)
 
-def winwing_mcdu_set_led(ep, led, brightness):
+def winwing_mcdu_set_led(device, led, brightness):
     data = [0x02, 0x32, 0xbb, 0, 0, 3, 0x49, led.value, brightness, 0,0,0,0,0]
     if 'data' in locals():
       cmd = bytes(data)
-      ep.write(cmd)
+      device.write(cmd)
 
 
 class DisplayManager:
@@ -905,8 +905,6 @@ def main():
 
     create_button_list_mcdu()
 
-    #leds = [Leds.SCREEN_BACKLIGHT]
-    #winwing_mcdu_set_leds(usb_mgr.device, leds, 100)
 
     usb_event_thread = Thread(target=mcdu_create_events, args=[usb_mgr, display_mgr])
     usb_event_thread.start()
