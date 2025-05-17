@@ -63,6 +63,16 @@ class ButtonType(Enum):
 class Leds(Enum):
     BACKLIGHT = 0 # 0 .. 255
     SCREEN_BACKLIGHT = 1 # 0 .. 255
+    FAIL = 8
+    FM = 9
+    MCDU = 10
+    MENU = 11
+    FM1 = 12
+    IND = 13
+    RDY = 14
+    STATUS = 15
+    FM2 = 16
+
 
 
 class DrefType(Enum):
