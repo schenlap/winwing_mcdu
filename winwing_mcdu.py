@@ -809,78 +809,39 @@ def kb_wait_quit_event():
         os._exit(0)
 
 
-def find_usblib():
-    path = ['/opt/homebrew/lib/libusb-1.0.0.dylib',
-            '/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0',
-            '/usr/lib/libusb-1.0.so.0']
-    pathlist = list(enumerate(path))
-    for p in range(len(pathlist)):
-        backend = usb.backend.libusb1.get_backend(find_library=lambda x: pathlist[p][1])
-        if backend:
-            print(f"using {pathlist[p][1]}")
-            return backend
-
-    print(f"*** No usblib found. Install it with:")
-    print(f"***   debian: apt install libusb1")
-    print(f"***   mac: brew install libusb")
-    print(f"***   If you get this warning and mcdu is working, please open an issue at")
-    print(f"***   https://github.com/schenlap/winwing_mcdu")
-    return None
-
-
 class UsbManager:
     def __init__(self):
-        self.backend = self.find_usb_backend()
         self.device = None
 
-    def find_usb_backend(self):
-        paths = [
-            '/opt/homebrew/lib/libusb-1.0.0.dylib',
-            '/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0',
-            '/usr/lib/libusb-1.0.so.0'
-        ]
-        for path in paths:
-            backend = usb.backend.libusb1.get_backend(find_library=lambda x: path)
-            if backend:
-                print(f"Using USB backend: {path}")
-                return backend
-        raise RuntimeError("No compatible USB backend found")
-
     def connect_device(self, vid: int, pid: int):
-        #print('Connected to Winwing MCDU {}\n'.format(PRODUCT_ID))
-
-        #self.device = usb.core.find(idVendor=vid, idProduct=pid, backend=self.backend)
         self.device = hid.device()
         self.device.open(vid, pid)
 
         if self.device is None:
             raise RuntimeError("Device not found")
 
-        #interface = self.device[0].interfaces()[0]
-        #if self.device.is_kernel_driver_active(interface.bInterfaceNumber):
-        #    self.device.detach_kernel_driver(interface.bInterfaceNumber)
-        #self.device.set_configuration()
         print("Device connected.")
 
     def find_device(self):
         device_config = 0
-        devlist = [{'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Captain', 'mask':DEVICEMASK.MCDU | DEVICEMASK.CAP},
-                   {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - First Offizer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.FO},
-                   {'vid':0x4098, 'pid':0xbb36, 'name':'MCDU - Observer', 'mask':DEVICEMASK.MCDU | DEVICEMASK.OBS},
-                   {'vid':0x4098, 'pid':0xbc1e, 'name':'PFP 3N (not tested)', 'mask':DEVICEMASK.PFP3N},
-                   {'vid':0x4098, 'pid':0xbc1d, 'name':'PFP 4 (not tested)', 'mask':DEVICEMASK.PFP4},
-                   {'vid':0x4098, 'pid':0xba01, 'name':'PFP 7 (not tested)', 'mask':DEVICEMASK.PFP7}]
+        devlist = [
+            {'vid': 0x4098, 'pid': 0xbb36, 'name': 'MCDU - Captain', 'mask': DEVICEMASK.MCDU | DEVICEMASK.CAP},
+            {'vid': 0x4098, 'pid': 0xbb36, 'name': 'MCDU - First Offizer', 'mask': DEVICEMASK.MCDU | DEVICEMASK.FO},
+            {'vid': 0x4098, 'pid': 0xbb36, 'name': 'MCDU - Observer', 'mask': DEVICEMASK.MCDU | DEVICEMASK.OBS},
+            {'vid': 0x4098, 'pid': 0xbc1e, 'name': 'PFP 3N (not tested)', 'mask': DEVICEMASK.PFP3N},
+            {'vid': 0x4098, 'pid': 0xbc1d, 'name': 'PFP 4 (not tested)', 'mask': DEVICEMASK.PFP4},
+            {'vid': 0x4098, 'pid': 0xba01, 'name': 'PFP 7 (not tested)', 'mask': DEVICEMASK.PFP7}
+        ]
         for d in devlist:
             print(f"now searching for winwing {d['name']} ... ", end='')
-            device = usb.core.find(idVendor=d['vid'], idProduct=d['pid'], backend=self.backend)
-            if device is not None:
-                print(f"found")
-                device_config |= d['mask']
-                return d['vid'], d['pid'], device_config
-                break
-            else:
-                print(f"not found")
-                return None, None, 0
+            found = False
+            for dev in hid.enumerate():
+                if dev['vendor_id'] == d['vid'] and dev['product_id'] == d['pid']:
+                    print("found")
+                    device_config |= d['mask']
+                    return d['vid'], d['pid'], device_config
+            print("not found")
+        return None, None, 0
 
 
 def main():
