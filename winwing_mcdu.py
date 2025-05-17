@@ -931,6 +931,7 @@ def main():
                 xp.AddDataRef("sim/aircraft/view/acf_tailnum", 0)
                 winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 0)
                 xplane_connected = True
+                page[0][0] = 'X' # force redraw
             except XPlaneUdp.XPlaneTimeout:
                 winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 1)
                 xplane_connected = False
