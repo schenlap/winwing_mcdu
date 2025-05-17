@@ -848,8 +848,14 @@ class UsbManager:
         self.device = None
 
     def connect_device(self, vid: int, pid: int):
-        self.device = hid.device()
-        self.device.open(vid, pid)
+
+        # Connect to device. Linux uses device whreas mac uses Device
+        try:
+            self.device = hid.device()
+            self.device.open(vid, pid)
+        except AttributeError as e:
+            print("using hidapi mac version")
+            self.device = hid.Device(vid=vid, pid=pid)
 
         if self.device is None:
             raise RuntimeError("Device not found")
