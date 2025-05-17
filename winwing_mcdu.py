@@ -170,8 +170,8 @@ class DisplayManager:
         self.write_line_to_page(0, 3,  'MCDU for X-Plane', 'W')
         self.write_line_to_page(1, 3,  'for TOLISS Airbus', 'W')
         self.write_line_to_page(12, 0, 'www.github.com/schenlap', 'W', True)
-        self.write_line_to_page(13, 0, 'winwing_mcdu', 'W', True)
-        self.write_line_to_page(8, 1, 'wait for X-Plane ', 'A')
+        self.write_line_to_page(13, 0, '/winwing_mcdu', 'W', True)
+        self.write_line_to_page(8, 1, 'waiting for X-Plane ', 'A')
         self.set_from_page()
 
     def _data_from_col_font(self, color: str, font_small: bool = False):
@@ -915,7 +915,7 @@ def main():
     xp.BeaconData["IP"] = UDP_IP # workaround to set IP and port
     xp.BeaconData["Port"] = UDP_PORT
     xp.UDP_PORT = xp.BeaconData["Port"]
-    print(f'wait for X-Plane to connect on port {xp.BeaconData["Port"]}')
+    print(f'waiting for X-Plane to connect on port {xp.BeaconData["Port"]}')
     winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 1)
 
     while True:
@@ -925,7 +925,7 @@ def main():
                 values = xp.GetValues()
 
                 print(f"X-Plane connected")
-                display_mgr.write_line_to_page(8, 1, 'register datarefs', 'G')
+                display_mgr.write_line_to_page(8, 1, 'registering datarefs', 'G')
                 display_mgr.set_from_page()
                 RequestDataRefs(xp)
                 xp.AddDataRef("sim/aircraft/view/acf_tailnum", 0)
@@ -945,7 +945,7 @@ def main():
             #values will be handled in mcdu_create_events to write to usb only in one thread.
             # see function set_datacache(values)
         except XPlaneUdp.XPlaneTimeout:
-            print(f'X-Plane timeout, could not connect on port {xp.BeaconData["Port"]}, wait for X-Plane')
+            print(f'X-Plane timeout, could not connect on port {xp.BeaconData["Port"]}, waiting for X-Plane')
             winwing_mcdu_set_leds(usb_mgr.device, Leds.FAIL, 1)
             display_mgr.startupscreen()
             xplane_connected = False
