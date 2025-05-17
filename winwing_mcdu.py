@@ -838,8 +838,13 @@ class UsbManager:
         self.device = None
 
     def connect_device(self, vid: int, pid: int):
-        self.device = hid.device()
-        self.device.open(vid, pid)
+        if hasattr(hid, 'device'):
+            self.device = hid.device(vid, pid)
+            self.device.open(vid, pid)
+        elif hasattr(hid, 'Device'):
+            self.device = hid.Device(vid, pid)
+        else:
+            raise RuntimeError("Could not create HID device") 
 
         if self.device is None:
             raise RuntimeError("Device not found")
