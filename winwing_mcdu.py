@@ -171,7 +171,7 @@ class DisplayManager:
         self.write_line_to_page(1, 3,  'for TOLISS Airbus', 'W')
         self.write_line_to_page(12, 0, 'www.github.com/schenlap', 'W', True)
         self.write_line_to_page(13, 0, 'winwing_mcdu', 'W', True)
-        self.write_line_to_page(8, 1, 'wait for X-Plane ', 'G')
+        self.write_line_to_page(8, 1, 'wait for X-Plane ', 'A')
         self.set_from_page()
 
     def _data_from_col_font(self, color: str, font_small: bool = False):
