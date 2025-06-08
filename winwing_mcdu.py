@@ -20,6 +20,11 @@ import subprocess
 from threading import Thread, Event, Lock
 from time import sleep
 
+#for windows handling -- add working directory to dll search path
+import platform
+if platform.system() == 'Windows':
+    os.add_dll_directory(os.path.dirname(__file__))
+
 import hid
 import usb.core
 import usb.backend.libusb1
