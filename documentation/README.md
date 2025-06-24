@@ -6,7 +6,7 @@
 TODO
 ```
 
-### usb decriptor FCU ###
+### usb decriptor MCDU ###
 lsusb -d 4098:bb36 -v
 ```
 Bus 001 Device 007: ID 4098:bb36 Winwing WINWING MCDU-32-CAPTAIN
