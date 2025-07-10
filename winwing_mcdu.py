@@ -940,15 +940,15 @@ def main():
     new_version = None
 
     # Check for new version on github. If you dont't want this, remove the following lines until 'version check end'
-    print(f"Current version: {VERSION}")
-    if "+" in VERSION:
-        print(f"*** WARNING: this is a development version {VERSION}, disable online version check ***\n")
-    else:
-        latest_release = get_latest_release_github()
-        if latest_release != None and latest_release != VERSION:
-            print(f"New version {latest_release} available, please update winwing_mcdu.py")
-            print(f"from http://github/com/schenlap/winwing_mcdu/releases/latest\n")
-            new_version = latest_release
+    #print(f"Current version: {VERSION}")
+    #if "+" in VERSION:
+    #    print(f"*** WARNING: this is a development version {VERSION}, disable online version check ***\n")
+    #else:
+    #    latest_release = get_latest_release_github()
+    #    if latest_release != None and latest_release != VERSION:
+    #        print(f"New version {latest_release} available, please update winwing_mcdu.py")
+    #        print(f"from http://github/com/schenlap/winwing_mcdu/releases/latest\n")
+    #    new_version = latest_release
     # version check end
 
     usb_mgr = UsbManager()
