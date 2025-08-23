@@ -1,3 +1,5 @@
+**This project is no longer maintained.** The successor https://github.com/schenlap/XSchenFly combines all devices into one script.
+
 # winwing_mcdu
 Use winwing mcdu on Linuc and Mac for X-Plane Toliss Airbus.
 
