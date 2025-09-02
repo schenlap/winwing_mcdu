@@ -20,6 +20,11 @@ import subprocess
 from threading import Thread, Event, Lock
 from time import sleep
 
+#for windows handling -- add working directory to dll search path
+import platform
+if platform.system() == 'Windows':
+    os.add_dll_directory(os.path.dirname(__file__))
+
 import hid
 import usb.core
 import usb.backend.libusb1
@@ -881,12 +886,12 @@ class UsbManager:
 
     def connect_device(self, vid: int, pid: int):
 
-        # Connect to device. Linux uses device whreas mac uses Device
+        # Connect to device. Linux uses device whreas mac uses Device (as well as Windows)
         try:
             self.device = hid.device()
             self.device.open(vid, pid)
         except AttributeError as e:
-            print("using hidapi mac version")
+            print("using hidapi mac/windows version")
             self.device = hid.Device(vid=vid, pid=pid)
 
         if self.device is None:

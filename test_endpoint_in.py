@@ -5,11 +5,13 @@ import time
 import usb.core
 import usb.backend.libusb1
 import usb.util
+import platform
 
 def find_usblib():
     path = ['/opt/homebrew/lib/libusb-1.0.0.dylib',
             '/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0',
-            '/usr/lib/libusb-1.0.so.0']
+            '/usr/lib/libusb-1.0.so.0',
+            './libusb-1.0.dll']
     pathlist = list(enumerate(path))
     for p in range(len(pathlist)):
         backend = usb.backend.libusb1.get_backend(find_library=lambda x: pathlist[p][1])
@@ -39,8 +41,9 @@ else:
     print(f"searching for MCDU ... found")
 
 interface = device[0].interfaces()[0]
-if device.is_kernel_driver_active(interface.bInterfaceNumber):
-    device.detach_kernel_driver(interface.bInterfaceNumber)
+if  platform.system() != 'Windows':
+    if device.is_kernel_driver_active(interface.bInterfaceNumber):
+        device.detach_kernel_driver(interface.bInterfaceNumber)
 
 device.set_configuration()
 
